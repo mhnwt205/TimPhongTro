@@ -1,0 +1,12 @@
+---
+import type { Room } from '../lib/rooms';
+import { areaName,rentLabel } from '../lib/rooms';
+import ListingPhoto from './ListingPhoto.astro';
+import Icon from './Icon.astro';
+interface Props { room: Room; eager?: boolean; hidden?: boolean }
+const { room,eager=false,hidden=false } = Astro.props;
+---
+<article class="room-card" data-room-card={room.id} hidden={hidden}>
+  <div class="room-card-media"><a href={'/phong/'+room.id} aria-label={'Xem '+room.title}><ListingPhoto room={room} eager={eager}/></a><button class="save-button icon-button" type="button" data-save-room={room.id} data-room-title={room.title} aria-label={'Lưu '+room.title} aria-pressed="false" title="Lưu phòng yêu thích"><Icon name="heart" size={19}/></button>{room.is_priority&&<span class="priority-badge">Ưu tiên</span>}<span class="room-type">{room.type === 'mini' ? 'Căn hộ mini' : 'Phòng trọ'}</span></div>
+  <div class="room-card-body"><div class="room-card-price num">{rentLabel(room.rent)}<span>/tháng</span></div><h3><a href={'/phong/'+room.id}>{room.title}</a></h3><p class="room-card-location"><Icon name="pin" size={14}/>{room.areaLabel??areaName(room.area)}<span>·</span>{room.size} m²</p><p class="room-card-features">{room.amenities.includes('furnished') ? 'Có nội thất' : 'Không gian riêng'}<span>·</span>{room.amenities.includes('loft') ? 'Có gác' : room.amenities.includes('ac') ? 'Máy lạnh' : 'Giờ giấc tự do'}</p></div>
+</article>

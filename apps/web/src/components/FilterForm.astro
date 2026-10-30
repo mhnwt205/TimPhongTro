@@ -1,0 +1,16 @@
+---
+import { amenities } from '../lib/rooms';
+interface Props { prefix: string; areas: readonly {id:string;name:string}[] }
+const { prefix,areas } = Astro.props;
+const query=Astro.url.searchParams;
+---
+<form class="filter-form" method="get" action="/tim-phong">
+  <div class="filter-group"><label for={prefix+'-q'}>Từ khóa</label><input id={prefix+'-q'} name="q" type="search" value={query.get('q') ?? ''} maxlength="120" placeholder="Tên đường, khu vực..."/></div>
+  <div class="filter-group"><label for={prefix+'-area'}>Khu vực tại TP.HCM</label><select id={prefix+'-area'} name="area"><option value="">Tất cả khu vực</option>{areas.map(area=><option value={area.id} selected={query.get('area')===area.id}>{area.name}</option>)}</select></div>
+  <div class="filter-group"><label for={prefix+'-max'}>Giá thuê tối đa / tháng</label><select id={prefix+'-max'} name="max"><option value="">Không giới hạn</option>{[[2500000,'2,5 triệu'],[3000000,'3 triệu'],[4000000,'4 triệu'],[5000000,'5 triệu'],[6000000,'6 triệu']].map(([value,label])=><option value={value} selected={query.get('max')===String(value)}>{label}</option>)}</select></div>
+  <div class="filter-group"><label for={prefix+'-min'}>Giá thuê tối thiểu / tháng</label><input id={prefix+'-min'} name="min" type="number" min="0" max="100000000" step="1" inputmode="numeric" value={query.get('min')??''} placeholder="Không giới hạn"/></div>
+  <div class="filter-group"><label for={prefix+'-size'}>Diện tích</label><select id={prefix+'-size'} name="size"><option value="">Mọi diện tích</option>{[['0-20','Dưới 20 m²'],['20-30','20–30 m²'],['30-50','30–50 m²'],['50-1000','Trên 50 m²']].map(([value,label])=><option value={value} selected={query.get('size')===value}>{label}</option>)}</select></div>
+  <fieldset class="filter-group"><legend>Loại chỗ ở</legend>{[['','Tất cả'],['room','Phòng trọ'],['mini','Căn hộ mini']].map(([value,label])=><label class="check-row"><input type="radio" name="type" value={value} checked={(query.get('type') ?? '')===value}/>{label}</label>)}</fieldset>
+  <fieldset class="filter-group"><legend>Tiện ích bạn cần</legend>{amenities.map(item=><label class="check-row"><input type="checkbox" name="amenity" value={item.id} checked={query.getAll('amenity').includes(item.id)}/>{item.name}</label>)}</fieldset>
+  <div class="filter-actions"><button class="button" type="submit">Áp dụng bộ lọc</button><a href="/tim-phong">Xóa bộ lọc</a></div>
+</form>

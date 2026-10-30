@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.astro/
+.wrangler/
+.cache/
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+*.log
+.DS_Store
+.taste-skill/
+__pycache__/
+*.py[cod]
+

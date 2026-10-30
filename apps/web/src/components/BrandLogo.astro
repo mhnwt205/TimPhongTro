@@ -1,0 +1,5 @@
+---
+interface Props { size?:number }
+const {size=48}=Astro.props;
+---
+<img class="brand-mark" src="/brand/logo-white.webp" width={size} height={Math.round(size*2/3)} alt="" aria-hidden="true" loading="eager"/>

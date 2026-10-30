@@ -1,0 +1,23 @@
+---
+import CmsLayout from '../../../../layouts/CmsLayout.astro';
+import ListingEditor from '../../../../components/ListingEditor.astro';
+import app,{can,type Listing} from '@timphongtro/api';
+import {env} from 'cloudflare:workers';
+const headers={cookie:Astro.request.headers.get('cookie')??''};
+const [response,optionsResponse]=await Promise.all([
+ app.fetch(new Request(new URL('/api/cms/listing-submissions/'+encodeURIComponent(Astro.params.id??''),Astro.url),{headers}),env),
+ app.fetch(new Request(new URL('/api/cms/options',Astro.url),{headers}),env),
+]);
+if(response.status===403)return Astro.rewrite('/403');
+type CmsListing=Listing&{display_name:string|null;phone:string|null;email:string;plan:{name:string}|null};
+const payload=response.ok?await response.json() as {item:CmsListing}:null;
+const options=optionsResponse.ok?await optionsResponse.json() as {locations:{id:string;name:string}[];plans:any[]}:null;
+const item=payload?.item;
+const data=item&&options?{...options,owner:{name:item.display_name??item.email,phone:item.phone},current_plan:item.plan}:null;
+if(!data)Astro.response.status=response.status===404?404:503;
+---
+<CmsLayout title="Sửa tin phòng" description="Chỉnh thông tin, ảnh, chi phí và gửi lại tin để xét duyệt.">
+<main id="main-content"><header class="cms-heading"><div><h1>Sửa thông tin phòng</h1><p>{item?.title??'Không tìm thấy tin phòng'}</p></div><a class="button secondary" href="/quan-tri/tin-phong">Quay lại danh sách</a></header>
+{data&&item?<ListingEditor item={item} data={data} mode="cms" editable={can(Astro.locals.user,'listings.update')}/>:<p class="alert" role="alert">Không tải được tin phòng hoặc dữ liệu biểu mẫu. Tải lại hoặc quay lại danh sách.</p>}
+</main>
+</CmsLayout>

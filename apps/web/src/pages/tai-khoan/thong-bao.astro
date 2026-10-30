@@ -1,0 +1,13 @@
+---
+import AccountShell from '../../layouts/AccountShell.astro';
+import Icon from '../../components/Icon.astro';
+import app,{type UserNotification} from '@timphongtro/api';
+import {env} from 'cloudflare:workers';
+import '../../styles/user-notifications.css';
+const r=await app.fetch(new Request(new URL('/api/account/notifications',Astro.url),{headers:{cookie:Astro.request.headers.get('cookie')??''}}),env);
+const data=r.ok?await r.json() as {items:UserNotification[];total_unread:number;page:number}:null;
+if(!data)Astro.response.status=r.status;
+const date=(n:number)=>new Date(n*1000).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'});
+const kinds:Record<string,string>={security:'Bảo mật',profile:'Hồ sơ',listing:'Tin đăng',topup:'Nạp tiền',withdrawal:'Rút tiền',renewal:'Gia hạn'};
+---
+<AccountShell title="Thông báo" description="Cập nhật về hồ sơ, tin đăng và các giao dịch của bạn."><main id="main-content" class="account-main user-notifications-page"><header class="profile-heading"><div><h1>Thông báo</h1><p>{data?.total_unread??0} thông báo chưa đọc</p></div>{Boolean(data?.total_unread)&&<button class="button secondary" type="button" data-notifications-read-all>Đánh dấu đã đọc</button>}</header><p class="alert" data-notifications-error role="alert" hidden></p>{!data?<p class="alert">Chưa tải được thông báo. Hãy thử tải lại trang.</p>:data.items.length?<div class="user-notification-list">{data.items.map(n=><a class={'user-notification '+(n.read_at?'read':'unread')} href={n.href} data-user-notification={n.id} data-read={String(Boolean(n.read_at))}><span class="user-notification-icon"><Icon name={n.kind==='security'?'lock':n.kind==='profile'?'user-check':n.kind==='listing'?'home':n.kind==='renewal'?'clock':'wallet'} size={18}/></span><span class="user-notification-copy"><span class="user-notification-heading"><strong>{n.title}</strong><small>{kinds[n.kind]??'Tài khoản'}</small></span><span>{n.body}</span><time datetime={new Date(n.created_at*1000).toISOString()}>{date(n.created_at)}</time></span>{!n.read_at&&<i aria-label="Chưa đọc"/>}</a>)}</div>:<section class="profile-card finance-empty"><Icon name="bell" size={30}/><h2>Chưa có thông báo</h2><p>Kết quả hồ sơ, tin đăng và cập nhật giao dịch sẽ xuất hiện tại đây.</p></section>}</main><script>import '../../scripts/user-notifications';</script></AccountShell>

@@ -1,0 +1,14 @@
+---
+import BrandLogo from './BrandLogo.astro';
+import Icon from './Icon.astro';
+interface Props { active?: string }
+const { active = '' } = Astro.props;
+const user = Astro.locals.user;
+---
+<header class="site-header"><div class="container header-inner">
+  <a class="brand" href="/" aria-label="Tìm Phòng Trọ — Trang chủ"><BrandLogo/><span>Tìm Phòng Trọ<span class="brand-dot">.</span></span></a>
+  <nav class="desktop-nav" aria-label="Điều hướng chính"><a href="/tim-phong" aria-current={active === 'browse' ? 'page' : undefined}>Tìm phòng</a><a href="/phong-da-luu" aria-current={active === 'saved' ? 'page' : undefined}>Phòng đã lưu <span data-saved-count class="count" hidden></span></a><a href="/bang-gia" aria-current={active === 'pricing' ? 'page' : undefined}>Dành cho người đăng</a></nav>
+  <div class="header-actions"><a class="account-link" href={user?.cms_access ? '/quan-tri' : user ? '/tai-khoan/ho-so' : '/dang-nhap'}><Icon name="user" size={18}/><span>{user?.cms_access ? 'Quản trị' : user ? 'Tài khoản' : 'Đăng nhập'}</span></a><a class="button secondary post-link" href="/tai-khoan/tin-dang/moi"><Icon name="plus" size={17}/>Đăng tin</a><button class="icon-button mobile-menu-toggle" type="button" data-open-dialog="navigation-dialog" aria-label="Mở menu"><Icon name="menu"/></button></div>
+</div></header>
+<dialog id="navigation-dialog" class="navigation-dialog"><div class="dialog-top"><strong>Tìm Phòng Trọ</strong><button class="icon-button" type="button" data-close-dialog aria-label="Đóng menu"><Icon name="close"/></button></div><nav class="dialog-navigation" aria-label="Menu điện thoại"><a href="/tim-phong"><Icon name="search"/>Tìm phòng tại TP.HCM</a><a href="/phong-da-luu"><Icon name="heart"/>Phòng đã lưu</a><a href="/bang-gia"><Icon name="wallet"/>Bảng giá đăng tin</a><a href="/dang-tin"><Icon name="plus"/>Hướng dẫn đăng tin</a><a href="/tai-khoan/ho-so"><Icon name="user"/>Hồ sơ của tôi</a>{user?.cms_access && <a href="/quan-tri"><Icon name="shield"/>Quản trị website</a>}</nav></dialog>
+<nav class="mobile-bottom-nav" aria-label="Điều hướng nhanh"><a href="/tim-phong" aria-current={active === 'browse' ? 'page' : undefined}><Icon name="search"/><span>Tìm phòng</span></a><a href="/phong-da-luu" aria-current={active === 'saved' ? 'page' : undefined}><Icon name="heart"/><span>Đã lưu</span></a><a href="/bang-gia" aria-current={active === 'pricing' ? 'page' : undefined}><Icon name="wallet"/><span>Bảng giá</span></a><a href="/tai-khoan/ho-so"><Icon name="user"/><span>Tài khoản</span></a></nav>

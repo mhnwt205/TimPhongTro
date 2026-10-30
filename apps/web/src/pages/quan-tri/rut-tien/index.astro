@@ -1,0 +1,15 @@
+---
+import CmsLayout from '../../../layouts/CmsLayout.astro';
+import Icon from '../../../components/Icon.astro';
+import type {Withdrawal} from '@timphongtro/api';
+import {financeRead,money,date,withdrawalLabels,type Page} from '../../../lib/finance';
+type Row=Withdrawal&{user_name:string;user_email:string;is_locked:number;user_deleted_at:number|null};
+const status=Astro.url.searchParams.get('status')??'waiting',q=Astro.url.searchParams.get('q')??'',page=Astro.url.searchParams.get('page')??'1';
+const {data,status:responseStatus}=await financeRead<Page<Row>>('/api/cms/withdrawals?'+new URLSearchParams({status,q,page}),Astro.url,Astro.request.headers.get('cookie'));
+if(!data)Astro.response.status=responseStatus;
+const filters=[['waiting','Chờ duyệt / đang chuyển'],['pending','Chờ duyệt'],['approved','Đang chuyển khoản'],['paid','Đã chuyển'],['rejected','Đã từ chối'],['cancelled','Đã hủy'],['all','Tất cả']];
+const url=(page:number)=>'?'+new URLSearchParams({status,q,page:String(page)});
+---
+<CmsLayout title="Yêu cầu rút số dư" description="Duyệt yêu cầu rút và ghi nhận chuyển khoản thủ công."><main id="main-content"><div class="cms-heading"><div><h1>Yêu cầu rút số dư</h1><p>Duyệt yêu cầu, chuyển khoản ngoài website rồi xác nhận đúng mã giao dịch.</p></div></div><section class="cms-sheet"><form method="get" class="cms-filters"><label>Tìm mã / người đăng<input name="q" value={q} maxlength="100"/></label><label>Trạng thái<select name="status">{filters.map(([value,label])=><option value={value} selected={status===value}>{label}</option>)}</select></label><button class="button secondary" type="submit">Tìm / lọc</button></form>
+{!data?<p class="alert" role="alert">Không tải được yêu cầu rút. Kiểm tra bộ lọc và thử lại.</p>:<><p class="finance-filter-info">{data.total} yêu cầu · Trang {data.page}</p>{data.items.length?<table class="cms-table finance-table"><thead><tr><th>Yêu cầu / người đăng</th><th>Số tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>{data.items.map(t=><tr><td data-label="Yêu cầu / người đăng"><strong>{t.code}</strong><p>{t.user_name}</p><small>{t.user_email}</small><small>{date(t.created_at)}</small>{Boolean(t.is_locked||t.user_deleted_at)&&<small>Tài khoản {t.user_deleted_at?'đã xóa mềm':'đã khóa'}; lịch sử được giữ.</small>}</td><td data-label="Số tiền" class="finance-number">{money(t.amount_vnd)}</td><td data-label="Trạng thái"><span class={'finance-status '+t.status}>{withdrawalLabels[t.status]}</span></td><td data-label="Thao tác"><a class="finance-open" href={'/quan-tri/rut-tien/'+t.id}>Xem yêu cầu <Icon name="chevron" size={14}/></a></td></tr>)}</tbody></table>:<div class="finance-empty"><h3>Không có yêu cầu trong danh sách này</h3><p>Yêu cầu xuất hiện sau khi người dùng gửi và hệ thống giữ tiền từ số dư khả dụng.</p></div>}<nav class="cms-pagination" aria-label="Phân trang yêu cầu rút"><span>{data.page>1&&<a href={url(data.page-1)}>← Trang trước</a>}</span>{data.page*data.page_size<data.total&&<a href={url(data.page+1)}>Trang sau →</a>}</nav></>}
+</section></main></CmsLayout>

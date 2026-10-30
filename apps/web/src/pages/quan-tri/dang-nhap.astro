@@ -1,0 +1,18 @@
+---
+import BrandLogo from '../../components/BrandLogo.astro';
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import '../../styles/account.css';
+import '../../styles/cms.css';
+import '../../styles/cms-controls.css';
+if(Astro.locals.user?.cms_access)return Astro.redirect('/quan-tri');
+const error=Astro.url.searchParams.get('error');
+---
+<Base title="Đăng nhập CMS — Tìm Phòng Trọ" description="Đăng nhập khu quản trị dành cho tài khoản được cấp quyền.">
+<main id="main-content" class="cms-login"><header><BrandLogo/>Tìm Phòng Trọ · CMS</header><h1>Đăng nhập quản trị</h1><p>Dùng tài khoản quản trị hoặc nhân viên đã được cấp quyền.</p>
+{error&&<p class="alert" role="alert">{error}</p>}
+<form method="post" action="/api/auth/login"><input type="hidden" name="context" value="cms"/>
+<div class="field"><label for="cms-email">Email</label><input id="cms-email" name="email" type="email" autocomplete="username" required maxlength="254"/></div>
+<div class="field"><label for="cms-password">Mật khẩu</label><input id="cms-password" name="password" type="password" autocomplete="current-password" required maxlength="128"/></div>
+<button class="button full" type="submit">Đăng nhập CMS <Icon name="arrow" size={17}/></button></form><footer><a href="/">← Về website tìm phòng</a></footer></main>
+</Base>

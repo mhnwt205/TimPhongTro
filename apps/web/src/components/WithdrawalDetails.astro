@@ -1,0 +1,9 @@
+---
+import type {Withdrawal} from '@timphongtro/api';
+import {money,date} from '../lib/finance';
+interface Props { withdrawal:Withdrawal }
+const {withdrawal:r}=Astro.props;
+---
+<dl class="finance-details"><div><dt>Số tiền nhận (không thu phí rút)</dt><dd class="finance-number">{money(r.amount_vnd)}</dd></div><div><dt>Ngân hàng nhận</dt><dd>{r.bank_name}</dd></div><div><dt>Số tài khoản nhận</dt><dd class="finance-transfer-content">{r.account_number}</dd></div><div><dt>Tên chủ tài khoản nhận</dt><dd>{r.account_holder}</dd></div><div><dt>Thời điểm gửi</dt><dd>{date(r.created_at)}</dd></div></dl>
+{r.customer_note&&<p class="finance-notice preserve"><strong>Ghi chú khi gửi</strong>{r.customer_note}</p>}
+{r.review_note&&<p class="finance-notice preserve"><strong>Ghi chú xử lý</strong>{r.review_note}</p>}

@@ -1,0 +1,10 @@
+---
+import AccountShell from '../../../layouts/AccountShell.astro';
+import ListingEditor from '../../../components/ListingEditor.astro';
+import app from '@timphongtro/api';
+import {env} from 'cloudflare:workers';
+const r=await app.fetch(new Request(new URL('/api/account/listings',Astro.url),{headers:{cookie:Astro.request.headers.get('cookie')??''}}),env);
+if(r.status===401)return Astro.redirect('/dang-nhap');
+const data=r.ok?await r.json():null;if(!data)Astro.response.status=503;
+---
+<AccountShell title="Đăng tin mới" description="Đăng phòng trọ hoặc căn hộ mini của bạn tại TP.HCM."><main id="main-content" class="account-main"><header class="profile-heading"><div><h1>Đăng tin mới</h1><p>Thêm thông tin phòng, ảnh và gửi xét duyệt.</p></div><a class="text-link" href="/tai-khoan/tin-dang">Tin của tôi →</a></header>{data?<ListingEditor data={data}/>:<p class="alert" role="alert">Chưa tải được biểu mẫu. Vui lòng tải lại trang.</p>}</main></AccountShell>

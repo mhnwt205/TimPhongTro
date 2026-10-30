@@ -1,0 +1,18 @@
+---
+import CmsLayout from '../../../layouts/CmsLayout.astro';
+import ListingEditor from '../../../components/ListingEditor.astro';
+import app,{can} from '@timphongtro/api';
+import {env} from 'cloudflare:workers';
+import '../../../styles/listings.css';
+const response=await app.fetch(new Request(new URL('/api/cms/options',Astro.url),{headers:{cookie:Astro.request.headers.get('cookie')??''}}),env);
+if(response.status===403||!can(Astro.locals.user,'listings.create'))return Astro.rewrite('/403');
+const data=response.ok?await response.json() as {owners:{id:string;name:string}[];locations:{id:string;name:string}[];plans:{id:string;name:string;price_vnd:number;duration_days:number;is_priority:number}[]}:null;
+if(!data)Astro.response.status=response.status||503;
+---
+<CmsLayout title="Tạo tin phòng" description="Tạo tin cho người đăng đã được duyệt bằng biểu mẫu đăng tin đầy đủ.">
+<main id="main-content" class="cms-listing-create">
+<header class="cms-heading"><div><h1>Tạo tin phòng</h1><p>Tin sẽ gắn với tài khoản người đăng đã chọn và chờ xét duyệt trước khi xuất bản.</p></div><a class="button secondary" href="/quan-tri/tin-phong/danh-sach">Quay lại danh sách</a></header>
+{!data?<p class="alert" role="alert">Không tải được danh sách người đăng, khu vực và gói đang hoạt động. Tải lại trang để thử lại.</p>:!data.owners.length?<section class="cms-sheet"><h2>Chưa có người đăng được duyệt</h2><p class="help">Hãy duyệt hồ sơ người đăng trước khi tạo tin cho họ.</p><a class="button" href="/quan-tri/nguoi-dang?status=pending">Mở danh sách người đăng</a></section>:!data.plans.length?<section class="cms-sheet"><h2>Chưa có gói đăng đang hoạt động</h2><p class="help">Bật ít nhất một gói đăng để gắn thời hạn và giá vào tin.</p><a class="button" href="/quan-tri/goi-dang-tin">Quản lý gói đăng</a></section>:<ListingEditor data={data} mode="cms"/>}
+</main>
+</CmsLayout>
+<style>.cms-listing-create{max-width:1240px}.cms-listing-create>.cms-heading{margin-bottom:24px}</style>

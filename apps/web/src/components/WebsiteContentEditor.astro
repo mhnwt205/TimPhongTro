@@ -1,0 +1,36 @@
+---
+import CmsLayout from '../layouts/CmsLayout.astro';
+import Icon from './Icon.astro';
+import app,{can,type WebsiteSettings} from '@timphongtro/api';
+import {env} from 'cloudflare:workers';
+const headers={cookie:Astro.request.headers.get('cookie')??''};
+const response=await app.fetch(new Request(new URL('/api/cms/site-content',Astro.url),{headers}),env);
+if(response.status===403)return Astro.rewrite('/403');
+const payload=response.ok?await response.json() as {settings:WebsiteSettings|null}:null;
+if(!payload)Astro.response.status=response.status||503;
+const settings=payload?.settings??null,editable=can(Astro.locals.user,'site_content.update');
+const groups=[
+ {title:'Trang chủ',fields:[['home_title','Tiêu đề chính','short'],['home_subtitle','Mô tả ngắn','short'],['home_photo_caption','Chú thích ảnh banner','short'],['seller_cta_title','Tiêu đề lời mời đăng tin','short'],['seller_cta_body','Nội dung lời mời đăng tin','long']]},
+ {title:'Bảng giá và ưu đãi',fields:[['pricing_banner_title','Tiêu đề trang bảng giá','short'],['pricing_banner_body','Mô tả trang bảng giá','long'],['free_posts_title','Tiêu đề ưu đãi','short'],['free_posts_body','Mô tả ưu đãi','long']]},
+ {title:'Câu hỏi thường gặp',fields:[['faq_title','Tiêu đề mục câu hỏi','short'],...Array.from({length:4},(_,i)=>[['faq_'+(i+1)+'_question','Câu hỏi '+(i+1),'short'],['faq_'+(i+1)+'_answer','Trả lời '+(i+1),'long']]).flat()]},
+ {title:'Hướng dẫn đăng tin',fields:[['guide_title','Tiêu đề trang hướng dẫn','short'],['guide_subtitle','Mô tả trang hướng dẫn','long'],...Array.from({length:3},(_,i)=>[['guide_step_'+(i+1)+'_title','Bước '+(i+1),'short'],['guide_step_'+(i+1)+'_body','Mô tả bước '+(i+1),'long']]).flat(),['guide_note_title','Tiêu đề ghi chú','short'],['guide_note_body','Nội dung ghi chú','long']]},
+ {title:'Chân trang và lưu ý tin đăng',fields:[['footer_description','Mô tả chân trang','long'],['footer_caption','Thông điệp chân trang','short'],['disclaimer_title','Tiêu đề lưu ý tin đăng','short'],['disclaimer_before_report','Nội dung trước liên kết báo cáo (giữ {{title}} để hiển thị tên tin)','long'],['disclaimer_after_report','Nội dung sau liên kết báo cáo','long']]},
+];
+---
+<CmsLayout title="Nội dung website" description="Quản lý nội dung giới thiệu, chính sách đăng tin và ưu đãi công khai.">
+<main id="main-content"><header class="cms-heading"><div><h1>Nội dung website</h1><p>Chỉnh nội dung giới thiệu, ưu đãi và hướng dẫn hiển thị công khai.</p></div></header>
+{!settings?<p class="alert" role="alert">Không tải được nội dung website. Tải lại trang để kiểm tra rồi thử lưu lại.</p>:<form class="website-copy-form" data-website-copy data-version={settings.version} data-editable={editable}>
+{groups.map(group=><section class="cms-sheet website-copy-group"><h2>{group.title}</h2><div class="cms-form-grid">{group.fields.map(([name,label,type])=>{const value=String(settings[name as keyof WebsiteSettings]??'');return <div class:list={['field',{wide:type==='long'}]}><label for={'copy-'+name}>{label}</label>{type==='long'?<textarea id={'copy-'+name} name={name} rows="3" maxlength="2000" disabled={!editable}>{value}</textarea>:<input id={'copy-'+name} name={name} value={value} maxlength="2000" disabled={!editable}/>}{['seller_cta_body','free_posts_title','free_posts_body'].includes(name)&&<small>Giữ nguyên mã <code>{'{{free_posts}}'}</code> để số tin miễn phí luôn khớp.</small>}{name==='disclaimer_before_report'&&<small>Giữ nguyên mã <code>{'{{title}}'}</code> để chèn tiêu đề từng tin.</small>}</div>;})}</div>{group.title==='Bảng giá và ưu đãi'&&<div class="field website-free-posts"><label for="free-posts-new">Số tin miễn phí cho tài khoản đăng ký mới</label><input id="free-posts-new" name="free_posts_new_account" type="number" min="0" max="100" step="1" value={settings.free_posts_new_account} disabled={!editable}/><small>Thay đổi này chỉ áp dụng cho tài khoản mới. Số lượt còn lại của tài khoản hiện có được giữ nguyên.</small></div>}</section>)}
+<p class="cms-form-error" role="alert" data-copy-error hidden></p><p role="status" class="help" data-copy-status></p>{editable&&<button class="button" type="submit"><Icon name="check" size={16}/>Lưu nội dung website</button>}
+</form>}
+</main>
+<script>
+import {displayError,readApiJson} from '../scripts/api-errors';
+const form=document.querySelector<HTMLFormElement>('[data-website-copy]');
+form?.addEventListener('submit',async event=>{event.preventDefault();const error=form.querySelector<HTMLElement>('[data-copy-error]')!,status=form.querySelector<HTMLElement>('[data-copy-status]')!,button=form.querySelector<HTMLButtonElement>('button[type=submit]')!;error.hidden=true;status.textContent='';const values=Object.fromEntries(new FormData(form).entries()) as Record<string,string>;const data:Record<string,string|number>={...values,version:Number(form.dataset.version),free_posts_new_account:Number(values.free_posts_new_account)};button.disabled=true;try{const response=await fetch('/api/cms/site-content',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});await readApiJson(response,'Chưa lưu được nội dung website. Kiểm tra lại các trường rồi thử lại.');status.textContent='Đã lưu nội dung website.';form.dataset.version=String(Number(form.dataset.version)+1);}catch(e){error.textContent=displayError(e,'Chưa lưu được nội dung. Tải lại trang để kiểm tra trạng thái rồi thử lại.');error.hidden=false;}finally{button.disabled=false;}});
+</script>
+<style>
+.website-copy-form{display:grid;gap:16px}.website-copy-group{padding:20px}.website-copy-group h2{margin:0 0 16px;font-size:17px}.website-free-posts{max-width:520px;margin-top:8px}.website-free-posts small{display:block;margin-top:7px;line-height:1.6}.website-copy-form>.button{justify-self:start}
+@media(max-width:600px){.website-copy-group{padding:15px}.website-copy-group .cms-form-grid{grid-template-columns:minmax(0,1fr)}}
+</style>
+</CmsLayout>

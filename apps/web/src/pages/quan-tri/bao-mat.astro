@@ -1,0 +1,14 @@
+---
+import CmsLayout from '../../layouts/CmsLayout.astro';
+---
+<CmsLayout title="Bảo mật" description="Đổi mật khẩu tài khoản quản trị."><main id="main-content"><div class="cms-heading"><div><h1>Bảo mật tài khoản</h1><p>Đổi mật khẩu sẽ kết thúc mọi phiên đăng nhập của bạn.</p></div></div>
+<div class="cms-sheet cms-security"><form id="password-form"><div class="field"><label for="current-password">Mật khẩu hiện tại</label><input id="current-password" name="current_password" type="password" autocomplete="current-password" required maxlength="128"/></div><div class="field"><label for="new-password">Mật khẩu mới</label><input id="new-password" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="128"/><small>Từ 12–128 ký tự, khác mật khẩu hiện tại.</small></div><div class="field"><label for="confirm-password">Nhập lại mật khẩu mới</label><input id="confirm-password" name="password_confirmation" type="password" autocomplete="new-password" required minlength="12" maxlength="128"/></div><p id="password-error" class="cms-form-error" role="alert" hidden></p><button class="button" type="submit">Đổi mật khẩu và đăng xuất</button></form></div></main></CmsLayout>
+<script>
+import {displayError,readApiJson} from '../../scripts/api-errors';
+ document.querySelector<HTMLFormElement>('#password-form')?.addEventListener('submit',async(event)=>{
+  event.preventDefault(); const form=event.currentTarget as HTMLFormElement,button=form.querySelector('button')!,error=document.querySelector<HTMLElement>('#password-error')!;
+  button.disabled=true;error.hidden=true;
+  try{const r=await fetch('/api/auth/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(form)))});const d=await readApiJson<{redirect:string}>(r,'Chưa đổi được mật khẩu. Kiểm tra lại thông tin rồi thử lại.');window.location.assign(d.redirect);}
+  catch(e){error.textContent=displayError(e,'Chưa đổi được mật khẩu. Kiểm tra kết nối rồi thử lại.');error.hidden=false;button.disabled=false;}
+ });
+</script>

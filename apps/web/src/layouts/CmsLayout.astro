@@ -1,0 +1,84 @@
+---
+import BrandLogo from '../components/BrandLogo.astro';
+import Base from './Base.astro';
+import Icon from '../components/Icon.astro';
+import CmsNotifications from '../components/CmsNotifications.astro';
+import app,{ can,type CmsNotifications as Notifications } from '@timphongtro/api';
+import {env} from 'cloudflare:workers';
+import { cmsSections,financeSections,reportSection } from '../lib/cms';
+import '../styles/account.css';
+import '../styles/cms.css';
+import '../styles/cms-dashboard.css';
+import '../styles/finance.css';
+import '../styles/cms-controls.css';
+interface Props { title:string; description:string; notifications?:Notifications }
+const {title,description}=Astro.props;
+const user=Astro.locals.user!;
+let notifications=Astro.props.notifications??null;
+if(!notifications){const response=await app.fetch(new Request(new URL('/api/cms/notifications',Astro.url),{headers:{cookie:Astro.request.headers.get('cookie')??''}}),env);if(response.ok)notifications=await response.json() as Notifications;}
+const sections=cmsSections.map(s=>({href:'/quan-tri/'+s.slug,label:s.label,icon:s.icon,permission:s.key+'.read'}));
+const financeLinks=financeSections.flatMap(s=>{
+ const allowed=s.key==='topups'?can(user,'topups.read')||can(user,'payments.read'):can(user,s.key+'.read');
+ return allowed?[{href:'/quan-tri/'+s.slug,label:s.label,icon:s.icon,permission:''}]:[];
+});
+const groups=[
+ {label:'Không gian làm việc',links:[{href:'/quan-tri',label:'Tổng quan',icon:'grid',permission:''},{href:'/quan-tri/nguoi-dang',label:'Duyệt người đăng',icon:'user-check',permission:'sellers.read'},{href:'/quan-tri/'+reportSection.slug,label:reportSection.label,icon:reportSection.icon,permission:'reports.read'},...sections.filter(s=>['/quan-tri/tin-phong','/quan-tri/gia-han','/quan-tri/noi-dung','/quan-tri/noi-dung-website'].includes(s.href))]},
+ {label:'Quản lý hệ thống',links:sections.filter(s=>!['/quan-tri/tin-phong','/quan-tri/gia-han','/quan-tri/noi-dung','/quan-tri/noi-dung-website'].includes(s.href))},
+ {label:'Tài chính',links:financeLinks},
+ {label:'Tài khoản của bạn',links:[{href:'/quan-tri/bao-mat',label:'Bảo mật',icon:'lock',permission:''}]},
+].map(g=>({...g,links:g.links.filter(l=>!l.permission||can(user,l.permission))})).filter(g=>g.links.length);
+const path=Astro.url.pathname.replace(/\/+$/,'');
+const isCurrent=(href:string)=>path===href||href!=='/quan-tri'&&path.startsWith(href+'/');
+const current=groups.flatMap(g=>g.links).find(l=>isCurrent(l.href))?.label??title;
+const pending=notifications?.counts.sellers??0;
+const pendingWithdrawals=notifications?.counts.withdrawals??0;
+const pendingRenewals=notifications?.counts.renewals??0;
+const pendingListings=notifications?.counts.listings??0;
+const pendingTopups=notifications?.counts.topups??0;
+---
+<Base title={title+' — Quản trị Tìm Phòng Trọ'} description={description}>
+<div class="cms-app">
+ <aside class="cms-sidebar" aria-label="Điều hướng quản trị">
+  <a class="cms-brand" href="/quan-tri"><BrandLogo size={44}/><span>Tìm Phòng Trọ<small>Không gian quản trị</small></span></a>
+  <nav data-cms-sidebar-scroll data-scroll-key={'tpt:cms-sidebar:'+user.id} aria-label="Các mục quản trị">{groups.map(group=><div class="cms-nav-group"><p>{group.label}</p>{group.links.map(l=><a href={l.href} aria-current={isCurrent(l.href)?'page':undefined}><Icon name={l.icon} size={18}/><span>{l.label}</span>{l.href==='/quan-tri/nguoi-dang'&&<b class="cms-nav-count" data-seller-queue-count hidden={!pending}>{pending>99?'99+':pending}</b>}{l.href==='/quan-tri/rut-tien'&&<b class="cms-nav-count" data-withdrawal-queue-count hidden={!pendingWithdrawals}>{pendingWithdrawals>99?'99+':pendingWithdrawals}</b>}{l.href==='/quan-tri/gia-han'&&<b class="cms-nav-count" data-renewal-queue-count hidden={!pendingRenewals}>{pendingRenewals>99?'99+':pendingRenewals}</b>}{l.href==='/quan-tri/tin-phong'&&<b class="cms-nav-count" data-listing-queue-count hidden={!pendingListings}>{pendingListings>99?'99+':pendingListings}</b>}{l.href==='/quan-tri/nap-tien'&&<b class="cms-nav-count" data-topup-queue-count hidden={!pendingTopups}>{pendingTopups>99?'99+':pendingTopups}</b>}</a>)}</div>)}</nav>
+  <div class="cms-identity"><a class="cms-identity-account" href="/quan-tri/bao-mat"><span class="cms-avatar">{user.name.charAt(0).toUpperCase()}</span><span><strong>{user.name}</strong><small>{user.is_super_admin?'Quản trị cao nhất':'Nhân viên quản trị'}</small></span></a><a href="/" target="_blank" rel="noopener"><Icon name="external" size={15}/>Mở website tìm phòng</a></div>
+ </aside>
+ <script is:inline nonce={Astro.locals.cspNonce}>
+  // Run before painting the main content so a full-page visit does not flash the menu at the top.
+  (()=>{
+   const nav=document.querySelector('[data-cms-sidebar-scroll]');
+   if(!nav)return;
+   const key=nav.dataset.scrollKey,desktop=window.matchMedia('(min-width: 901px)');
+   let restored=false;
+   const save=()=>{
+    if(!restored||!desktop.matches)return;
+    try{sessionStorage.setItem(key,String(nav.scrollTop));}catch{}
+   };
+   const restore=()=>{
+    if(!desktop.matches)return;
+    let value=null;
+    try{const saved=sessionStorage.getItem(key);if(saved!==null&&Number.isFinite(Number(saved))&&Number(saved)>=0)value=Number(saved);}catch{}
+    if(value!==null)nav.scrollTop=value;
+    else{
+     const active=nav.querySelector('[aria-current=page]');
+     if(active){const item=active.getBoundingClientRect(),box=nav.getBoundingClientRect();if(item.bottom>box.bottom||item.top<box.top)nav.scrollTop+=item.top-box.top-(box.height-item.height)/2;}
+    }
+    restored=true;
+   };
+   restore();
+   nav.addEventListener('scroll',save,{passive:true});
+   nav.addEventListener('click',save,{capture:true});
+   document.addEventListener('submit',save,{capture:true});
+   window.addEventListener('pagehide',save);
+   window.addEventListener('pageshow',restore);
+   desktop.addEventListener('change',restore);
+  })();
+ </script>
+ <div class="cms-body">
+  <header class="cms-topbar"><div class="cms-breadcrumb"><span>Quản trị</span><Icon name="chevron" size={13}/><strong>{current}</strong></div><div class="cms-topbar-actions"><a class="cms-visit" href="/" target="_blank" rel="noopener">Xem website <Icon name="external" size={15}/></a><CmsNotifications data={notifications} auditAccess={can(user,'audit.read')}/><a class="cms-avatar-link" href="/quan-tri/bao-mat" aria-label="Bảo mật tài khoản"><span class="cms-avatar small">{user.name.charAt(0).toUpperCase()}</span></a><form method="post" action="/api/auth/logout"><input type="hidden" name="context" value="cms"/><button type="submit" class="cms-signout" aria-label="Đăng xuất"><Icon name="logout" size={17}/><span>Đăng xuất</span></button></form></div></header>
+  <details class="cms-mobile-nav"><summary><Icon name="menu" size={18}/> Mục quản lý <Icon name="down" size={14}/></summary><nav>{groups.flatMap(g=>g.links).map(l=><a href={l.href} aria-current={isCurrent(l.href)?'page':undefined}><Icon name={l.icon} size={16}/>{l.label}</a>)}</nav></details>
+  <div class="cms-content"><slot/></div>
+ </div>
+</div>
+<script>import '../scripts/cms-shell';</script>
+</Base>

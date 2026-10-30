@@ -1,0 +1,12 @@
+---
+import CmsLayout from '../../../layouts/CmsLayout.astro';
+import Icon from '../../../components/Icon.astro';
+import {financeRead,money,type Page} from '../../../lib/finance';
+type Row={id:string;name:string;email:string;balance_vnd:number;held_vnd:number;free_posts_remaining:number;is_locked:number;deleted_at:number|null};
+const q=Astro.url.searchParams.get('q')??'',page=Astro.url.searchParams.get('page')??'1';
+const {data,status}=await financeRead<Page<Row>>('/api/cms/wallets?'+new URLSearchParams({q,page}),Astro.url,Astro.request.headers.get('cookie'));
+if(!data)Astro.response.status=status;
+---
+<CmsLayout title="Số dư và giao dịch" description="Tra cứu số dư đăng tin và sổ giao dịch theo tài khoản."><main id="main-content"><div class="cms-heading"><div><h1>Số dư và giao dịch</h1><p>Số dư được đối chiếu bằng sổ cộng, trừ. Mọi điều chỉnh cần lý do và được lưu lịch sử.</p></div></div><section class="cms-sheet"><form method="get" class="cms-filters"><label>Tìm người đăng<input name="q" value={q} maxlength="100" placeholder="Tên hoặc email"/></label><button class="button secondary" type="submit">Tìm kiếm</button></form>
+{!data?<p class="alert" role="alert">Không tải được danh sách số dư. Kiểm tra từ khóa tìm kiếm rồi tải lại trang.</p>:<><p class="finance-filter-info">{data.total} tài khoản · Trang {data.page}</p><table class="cms-table finance-table"><thead><tr><th>Tài khoản</th><th>Số dư khả dụng</th><th>Ưu đãi còn lại</th><th>Thao tác</th></tr></thead><tbody>{data.items.map(u=><tr><td data-label="Tài khoản"><strong>{u.name}</strong><small>{u.email}</small>{Boolean(u.is_locked||u.deleted_at)&&<small>{u.deleted_at?'Đã xóa mềm':'Đã khóa'} · bảo toàn số dư/lịch sử</small>}</td><td data-label="Số dư" class="finance-number">{money(u.balance_vnd)}<small>Đang giữ: {money(u.held_vnd)}</small></td><td data-label="Ưu đãi còn lại">{u.free_posts_remaining} lượt</td><td data-label="Thao tác"><a class="finance-open" href={'/quan-tri/so-du/'+u.id}>Xem sổ giao dịch <Icon name="chevron" size={14}/></a></td></tr>)}</tbody></table><nav class="cms-pagination" aria-label="Phân trang số dư"><span>{data.page>1&&<a href={'?'+new URLSearchParams({q,page:String(data.page-1)})}>← Trang trước</a>}</span>{data.page*data.page_size<data.total&&<a href={'?'+new URLSearchParams({q,page:String(data.page+1)})}>Trang sau →</a>}</nav></>}
+</section></main></CmsLayout>

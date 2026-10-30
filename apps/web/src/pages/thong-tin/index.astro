@@ -1,0 +1,104 @@
+---
+import Base from '../../layouts/Base.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import Icon from '../../components/Icon.astro';
+import '../../styles/content-pages.css';
+import {env} from 'cloudflare:workers';
+const descriptions:Record<string,string>={
+  'quy-dinh-dang-tin':'Chuẩn bị thông tin chính xác, dễ hiểu và hữu ích cho người thuê.',
+  'phi-dang-tin-va-gia-han':'Mức phí, thời gian hiển thị và cách gia hạn tin đăng.',
+  'nap-rut-va-hoan-tien':'Theo dõi yêu cầu nạp, rút và các khoản trong số dư.',
+  'chinh-sach-bao-mat':'Cách thông tin cá nhân được sử dụng và bảo vệ.',
+  'lien-he-va-khieu-nai':'Gửi phản ánh về tin đăng, tài khoản hoặc giao dịch.',
+};
+const icons:Record<string,string>={
+  'quy-dinh-dang-tin':'list',
+  'phi-dang-tin-va-gia-han':'calendar',
+  'nap-rut-va-hoan-tien':'wallet',
+  'chinh-sach-bao-mat':'shield',
+  'lien-he-va-khieu-nai':'message',
+};
+const pages=(await env.DB.prepare('SELECT slug,title,body FROM content_pages WHERE is_active=1 AND deleted_at IS NULL').all<{slug:string;title:string;body:string}>()).results??[];
+const pageOrder=['quy-dinh-dang-tin','phi-dang-tin-va-gia-han','nap-rut-va-hoan-tien','chinh-sach-bao-mat','lien-he-va-khieu-nai'];
+pages.sort((a,b)=>pageOrder.indexOf(a.slug)-pageOrder.indexOf(b.slug));
+if(!pages.length)return Astro.rewrite('/404');
+const featured=pages.find(page=>page.slug==='quy-dinh-dang-tin')??pages[0];
+const remaining=pages.filter(page=>page.slug!==featured.slug);
+const contactPage=pages.find(page=>page.slug==='lien-he-va-khieu-nai');
+const description='Hướng dẫn và thông tin rõ ràng để bạn yên tâm tìm phòng, đăng tin và sử dụng Tìm Phòng Trọ.';
+---
+<Base title="Thông tin & hỗ trợ — Tìm Phòng Trọ" description={description} robots={pages.some(page=>page.body.trim().length>=300)?'index, follow':'noindex, follow'}>
+  <SiteHeader/>
+  <main id="main-content" class="container content-hub">
+    <nav class="content-breadcrumb" aria-label="Đường dẫn"><a href="/">Trang chủ</a><Icon name="chevron" size={13}/><span aria-current="page">Thông tin & hỗ trợ</span></nav>
+
+    <section class="content-hub-hero" aria-labelledby="content-hub-title">
+      <div class="content-hub-copy">
+        <span class="content-hub-eyebrow"><span class="content-hub-eyebrow-dot"></span> TRUNG TÂM THÔNG TIN</span>
+        <h1 id="content-hub-title">Tìm câu trả lời,<br/><em>an tâm tìm phòng.</em></h1>
+        <p>Thông tin về đăng tin, chi phí, giao dịch và quyền riêng tư — được viết rõ ràng để bạn dễ tra cứu.</p>
+        <form class="content-search" role="search" data-content-search-form>
+          <Icon name="search" size={19}/>
+          <label class="sr-only" for="content-search-input">Tìm trong thông tin và hỗ trợ</label>
+          <input id="content-search-input" type="search" placeholder="Bạn muốn tìm hiểu điều gì?" autocomplete="off" data-content-search-input/>
+          <kbd>Ctrl K</kbd>
+        </form>
+        <span class="content-search-hint">Thử tìm “gia hạn”, “nạp tiền” hoặc “địa chỉ”</span>
+      </div>
+      <div class="content-hub-art" aria-hidden="true">
+        <div class="hub-art-sun"></div><div class="hub-art-ground"></div>
+        <svg viewBox="0 0 360 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="m45 133 113-94 111 94v91H45v-91Z" fill="#FDFEFC" stroke="#D7E5E4" stroke-width="3"/>
+          <path d="m27 134 131-109 130 109" stroke="#DEA83E" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M82 161h60v63H82v-63Z" fill="#E5F0ED"/><path d="M98 193h27" stroke="#6E9990" stroke-width="4" stroke-linecap="round"/>
+          <rect x="176" y="95" width="62" height="49" rx="7" fill="#D9EEEE"/><path d="M207 101v36m-24-18h48" stroke="#4A8990" stroke-width="3"/>
+          <rect x="239" y="29" width="84" height="112" rx="13" fill="#FFF8EA" stroke="#E9D9B7" stroke-width="2" transform="rotate(6 239 29)"/>
+          <path d="m259 64 39 4m-41 12 34 4m-35 10 28 3" stroke="#9AABA7" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="294" cy="119" r="12" fill="#EAB44C"/><path d="m288 119 4 4 8-9" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M48 227h235" stroke="#7BA5A0" stroke-width="4" stroke-linecap="round"/><circle cx="72" cy="78" r="5" fill="#EAB44C"/><circle cx="320" cy="184" r="6" fill="#6A9C94"/>
+        </svg>
+        <span class="hub-art-note"><Icon name="check" size={15}/> Thông tin dễ hiểu</span>
+      </div>
+    </section>
+
+    <section class="content-directory" aria-labelledby="content-directory-title">
+      <header class="content-directory-heading">
+        <div><span class="content-section-kicker">TRA CỨU THEO CHỦ ĐỀ</span><h2 id="content-directory-title">Thông tin bạn cần</h2></div>
+        <span class="content-page-count"><strong data-content-count>{pages.length}</strong> bài viết</span>
+      </header>
+      <div class="content-topic-grid" data-content-topic-grid>
+        <a class="content-topic-featured" href={'/thong-tin/'+featured.slug} data-content-item data-search={(featured.title+' '+(descriptions[featured.slug]??'')+' '+featured.body).toLowerCase()}>
+          <div class="topic-featured-copy"><span class="topic-featured-label"><Icon name={icons[featured.slug]??'info'} size={15}/> BẮT ĐẦU TỪ ĐÂY</span><h3>{featured.title}</h3><p>{descriptions[featured.slug]??'Thông tin bạn cần biết khi sử dụng dịch vụ.'}</p><span class="topic-link">Đọc hướng dẫn <Icon name="arrow" size={16}/></span></div>
+          <div class="topic-featured-art" aria-hidden="true"><span class="topic-art-card"><Icon name={icons[featured.slug]??'info'} size={35}/><i></i><i></i><i></i></span><span class="topic-art-star">✦</span></div>
+        </a>
+        {remaining.map((page,index)=><a class={'content-topic-card topic-tone-'+(index%3+1)} href={'/thong-tin/'+page.slug} data-content-item data-search={(page.title+' '+(descriptions[page.slug]??'')+' '+page.body).toLowerCase()}>
+          <span class="topic-card-icon"><Icon name={icons[page.slug]??'info'} size={19}/></span>
+          <span class="topic-card-copy"><strong>{page.title}</strong><small>{descriptions[page.slug]??'Thông tin hữu ích dành cho bạn.'}</small><span class="topic-card-link">Xem chi tiết <Icon name="arrow" size={14}/></span></span>
+          <span class="topic-card-index">{String(index+2).padStart(2,'0')}</span>
+        </a>)}
+      </div>
+      <div class="content-search-empty" data-content-empty hidden><span class="content-empty-mark"><Icon name="search" size={22}/></span><h3>Chưa tìm thấy bài viết phù hợp</h3><p>Thử một từ khóa khác như “đăng tin”, “rút tiền” hoặc “bảo mật”.</p></div>
+    </section>
+
+    <aside class="content-hub-note"><span class="content-hub-note-icon"><Icon name="message" size={20}/></span><div><strong>Cần trao đổi thêm?</strong><p>Gửi phản ánh về tin đăng trực tiếp từ trang tin hoặc đọc cách liên hệ với chúng tôi.</p></div>{contactPage&&<a href={'/thong-tin/'+contactPage.slug}>Xem cách liên hệ <Icon name="arrow" size={15}/></a>}</aside>
+  </main>
+  <SiteFooter/>
+  <script>
+    const input=document.querySelector<HTMLInputElement>('[data-content-search-input]');
+    const form=document.querySelector<HTMLFormElement>('[data-content-search-form]');
+    const cards=[...document.querySelectorAll<HTMLElement>('[data-content-item]')];
+    const empty=document.querySelector<HTMLElement>('[data-content-empty]');
+    const count=document.querySelector<HTMLElement>('[data-content-count]');
+    const fold=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d').toLowerCase();
+    const filter=()=>{
+      const query=fold(input?.value??'').trim();let visible=0;
+      for(const card of cards){const match=!query||fold(card.dataset.search??'').includes(query);card.hidden=!match;if(match)visible++;}
+      if(empty)empty.hidden=visible>0;
+      if(count)count.textContent=String(visible);
+    };
+    input?.addEventListener('input',filter);
+    form?.addEventListener('submit',event=>event.preventDefault());
+    document.addEventListener('keydown',event=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();input?.focus();}});
+  </script>
+</Base>

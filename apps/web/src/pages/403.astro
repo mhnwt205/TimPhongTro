@@ -1,0 +1,10 @@
+---
+import Base from '../layouts/Base.astro';
+import PageBanner from '../components/PageBanner.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import '../styles/account.css';
+Astro.response.status = 403;
+---
+<Base title="Không có quyền truy cập — Tìm Phòng Trọ" description="Trang này dành cho người được cấp quyền quản trị.">
+  <SiteHeader/><main id="main-content" class="container"><PageBanner title="Trang dành cho quản trị viên">Tiếp tục tìm một chỗ ở phù hợp tại TP.HCM.</PageBanner><div class="empty-state"><p>Tài khoản của bạn chưa được cấp quyền truy cập trang này.</p><a href="/tai-khoan/ho-so" class="button">Về hồ sơ của tôi</a></div></main>
+</Base>

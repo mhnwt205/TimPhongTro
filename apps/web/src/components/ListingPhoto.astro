@@ -1,0 +1,8 @@
+---
+import RoomImage from './RoomImage.astro';
+import type {Room} from '../lib/rooms';
+interface Props{room:Room;index?:number;eager?:boolean}
+const {room,index=0,eager=false}=Astro.props;
+const id=room.images?.[index]??room.images?.[0];
+---
+{id?<div class="room-photo"><img src={'/api/listing-images/'+id} alt={room.title+(index?' — góc '+(index+1):'')} loading={eager?'eager':'lazy'} decoding="async" width="800" height="600"/></div>:<RoomImage photo={(room.photo+index)%4} alt={room.title} eager={eager}/>}

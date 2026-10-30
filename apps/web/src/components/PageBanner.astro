@@ -1,0 +1,6 @@
+---
+import RoomImage from './RoomImage.astro';
+interface Props { title:string; description?:string; photo?:number }
+const {title,description='',photo=2}=Astro.props;
+---
+<header class="page-banner"><div><h1>{title}</h1><p><slot>{description}</slot></p></div><figure><RoomImage photo={photo} alt="Không gian phòng sáng"/></figure></header>

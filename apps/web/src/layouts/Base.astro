@@ -1,0 +1,64 @@
+---
+import '../styles/site.css';
+import '../styles/refresh.css';
+interface Props {
+  title: string;
+  description: string;
+  robots?: string;
+  canonical?: string;
+  image?: string;
+  imageAlt?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  ogType?: 'website' | 'article';
+}
+const {
+  title,
+  description,
+  robots = 'noindex, nofollow',
+  canonical,
+  image = '/brand/share-card.png',
+  imageAlt = 'Tìm Phòng Trọ — tìm phòng trọ và căn hộ mini tại TP.HCM',
+  imageWidth,
+  imageHeight,
+  ogType = 'website',
+} = Astro.props;
+const siteRoot = Astro.site ?? new URL(Astro.url.origin);
+const canonicalUrl = new URL(canonical ?? Astro.url.pathname, siteRoot).href;
+const imageUrl = new URL(image, siteRoot).href;
+const cleanDescription = description.replace(/\s+/g, ' ').trim().slice(0, 300);
+---
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={cleanDescription} />
+    <meta name="robots" content={robots} />
+    <meta name="googlebot" content={robots} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:locale" content="vi_VN" />
+    <meta property="og:site_name" content="Tìm Phòng Trọ" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={cleanDescription} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:alt" content={imageAlt} />
+    {imageWidth && <meta property="og:image:width" content={String(imageWidth)} />}
+    {imageHeight && <meta property="og:image:height" content={String(imageHeight)} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={cleanDescription} />
+    <meta name="twitter:image" content={imageUrl} />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" type="image/png" href="/brand/favicon-32.png" /><link rel="apple-touch-icon" href="/brand/icon-192.png" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
+    <slot />
+    <div class="toast" role="status" aria-live="polite" data-toast hidden></div>
+    <script>import '../scripts/site';</script>
+  </body>
+</html>

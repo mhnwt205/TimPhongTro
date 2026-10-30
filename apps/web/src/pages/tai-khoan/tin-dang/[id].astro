@@ -1,0 +1,11 @@
+---
+import AccountShell from '../../../layouts/AccountShell.astro';
+import ListingEditor from '../../../components/ListingEditor.astro';
+import app from '@timphongtro/api';
+import {env} from 'cloudflare:workers';
+const headers={cookie:Astro.request.headers.get('cookie')??''};
+const [r,one]=await Promise.all(['/api/account/listings','/api/account/listings/'+Astro.params.id].map(path=>app.fetch(new Request(new URL(path,Astro.url),{headers}),env)));
+if(r.status===401)return Astro.redirect('/dang-nhap');if(one.status===404)return Astro.rewrite('/404');
+const data=r.ok?await r.json():null,item=one.ok?(await one.json() as any).item:null;if(!data||!item)Astro.response.status=503;
+---
+<AccountShell title="Chỉnh sửa tin đăng" description="Cập nhật thông tin phòng và theo dõi kết quả xét duyệt."><main id="main-content" class="account-main"><header class="profile-heading"><div><h1>Chỉnh sửa tin đăng</h1><p>Lưu lại bản nháp hoặc gửi xét duyệt khi đã sẵn sàng.</p></div><a class="text-link" href="/tai-khoan/tin-dang">← Tin của tôi</a></header>{data&&item?<ListingEditor data={data} item={item}/>:<p class="alert" role="alert">Chưa tải được tin. Vui lòng tải lại trang.</p>}</main></AccountShell>

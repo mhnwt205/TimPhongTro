@@ -1,0 +1,42 @@
+---
+import type {ActivityDay} from '@timphongtro/api';
+import Icon from './Icon.astro';
+interface Props { activity:ActivityDay[]; metric:'users'|'listings'|'content'; days:number; options:{key:string;label:string}[] }
+const {activity,metric,days,options}=Astro.props;
+const labels={users:'tài khoản mới',listings:'bản nháp mới',content:'trang nội dung mới'};
+const values=activity.map(d=>Number(d[metric]??0)),total=values.reduce((n,v)=>n+v,0);
+const peak=Math.max(1,...values),ceiling=peak<5?peak:Math.ceil(peak/5)*5;
+const ticks=ceiling===1?[1,0]:[ceiling,Math.floor(ceiling/2),0];
+const width=720,height=180,slot=width/activity.length,bar=Math.min(44,slot*.55);
+const dayLabel=(date:string)=>date.slice(8,10)+'/'+date.slice(5,7);
+const fullDay=(date:string)=>new Date(date+'T00:00:00Z').toLocaleDateString('vi-VN',{timeZone:'UTC',weekday:'long',day:'2-digit',month:'2-digit'});
+const summary=`${total.toLocaleString('vi-VN')} ${labels[metric]} trong ${days} ngày`;
+---
+<section class="dashboard-panel activity-panel" aria-labelledby="activity-title" data-activity-chart>
+ <header class="dashboard-panel-heading"><div><span class="dashboard-kicker">Diễn biến hoạt động</span><h2 id="activity-title">Dữ liệu mới theo ngày</h2></div><span class="dashboard-chart-unit"><span class="legend-dot accent"></span>Số lượng</span></header>
+ <nav class="activity-tabs" aria-label="Chọn số liệu biểu đồ">{options.map(option=><a href={'?'+new URLSearchParams({days:String(days),metric:option.key})} aria-current={option.key===metric?'page':undefined}>{option.label}</a>)}</nav>
+ <div class="activity-total"><strong>{total.toLocaleString('vi-VN')}</strong><span>{labels[metric]}<small>trong {days} ngày gần nhất</small></span></div>
+ <div class="activity-chart" data-chart-metric={metric}>
+  <div class="chart-y-labels" aria-hidden="true">{ticks.map(t=><span style={`top:${(1-t/ceiling*(1-12/height))*100}%`}>{t}</span>)}</div>
+  <div class="chart-plot">
+   <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="group" aria-label={summary}>
+    {ticks.map(t=><line class="chart-grid" x1="0" x2={width} y1={height-(t/ceiling)*(height-12)} y2={height-(t/ceiling)*(height-12)}/>)}
+    {activity.map((day,i)=>{const value=values[i],x=i*slot+slot/2,h=value/ceiling*(height-12),caption=`${fullDay(day.day)}: ${value} ${labels[metric]}`;return <g class="chart-day" tabindex="0" role="img" aria-label={caption} data-chart-caption={caption}><title>{caption}</title><rect class="chart-hit" x={i*slot} y="0" width={slot} height={height}/>{value>0?<rect class="chart-bar" x={x-bar/2} y={height-h} width={bar} height={h} rx="3"/>:<circle class="chart-zero" cx={x} cy={height-1} r={days===7?2:1}/>}</g>;})}
+   </svg>
+   {!total&&<p class="chart-empty">Chưa có {labels[metric]} trong khoảng này.</p>}
+   <div class="chart-x-labels" aria-hidden="true">{activity.map((d,i)=>{const show=days===7?[0,2,4,6].includes(i):[0,6,12,18,24,29].includes(i);return show&&<span style={`left:${(i+.5)/activity.length*100}%`}>{dayLabel(d.day)}</span>;})}</div>
+  </div>
+ </div>
+ <p class="chart-insight" data-chart-insight aria-live="polite"><Icon name="info" size={14}/><span>{summary}. Chọn một cột để xem từng ngày.</span></p>
+ <footer class="dashboard-panel-footnote">Theo ngày tạo, giờ Việt Nam. Không bao gồm thao tác chỉnh sửa.</footer>
+ <details class="chart-data-table"><summary>Xem bảng số liệu</summary><table><caption>{summary}</caption><thead><tr><th scope="col">Ngày</th><th scope="col">Số lượng</th></tr></thead><tbody>{activity.map((d,i)=><tr><th scope="row">{dayLabel(d.day)}</th><td>{values[i]}</td></tr>)}</tbody></table></details>
+</section>
+<script>
+ for(const chart of document.querySelectorAll<HTMLElement>('[data-activity-chart]')){
+  const insight=chart.querySelector('[data-chart-insight] span')!;
+  for(const day of chart.querySelectorAll<SVGElement>('[data-chart-caption]')){
+   const show=()=>{insight.textContent=day.dataset.chartCaption??'';for(const old of chart.querySelectorAll('.is-highlighted'))old.classList.remove('is-highlighted');day.classList.add('is-highlighted');};
+   day.addEventListener('mouseenter',show);day.addEventListener('focus',show);day.addEventListener('click',show);day.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();show();}});
+  }
+ }
+</script>

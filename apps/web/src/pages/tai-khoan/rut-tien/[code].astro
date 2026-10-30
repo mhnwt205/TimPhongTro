@@ -1,0 +1,15 @@
+---
+import AccountShell from '../../../layouts/AccountShell.astro';
+import FinanceConfirm from '../../../components/FinanceConfirm.astro';
+import WithdrawalDetails from '../../../components/WithdrawalDetails.astro';
+import TopupTimeline from '../../../components/TopupTimeline.astro';
+import type {Withdrawal} from '@timphongtro/api';
+import {financeRead,money,date,withdrawalLabels,withdrawalEventLabels,type Event} from '../../../lib/finance';
+type Detail={withdrawal:Withdrawal;events:Event[];payout:{bank_reference:string;amount_vnd:number;created_at:number}|null};
+const {data,status}=await financeRead<Detail>('/api/account/withdrawals/'+encodeURIComponent(Astro.params.code??''),Astro.url,Astro.request.headers.get('cookie'));
+if(status===404)return Astro.rewrite('/404');if(!data)Astro.response.status=status;
+const r=data?.withdrawal;
+---
+<AccountShell title="Chi tiết yêu cầu rút" description="Theo dõi tiền đang giữ và trạng thái chuyển khoản."><main id="main-content" class="account-main"><a class="finance-back" href="/tai-khoan/rut-tien">← Các yêu cầu rút</a><div class="finance-page-heading"><div><h1>{r?.code??'Yêu cầu rút'}</h1><p>Thông tin nhận tiền được giữ nguyên từ lúc gửi yêu cầu.</p></div>{r&&<span class={'finance-status '+r.status}>{withdrawalLabels[r.status]}</span>}</div>
+{!r||!data?<p class="alert" role="alert">Không tải được chi tiết yêu cầu rút. Quay lại danh sách rút tiền hoặc tải lại trang.</p>:<><section class="finance-panel"><WithdrawalDetails withdrawal={r}/>{['pending','approved'].includes(r.status)&&<p class="finance-notice"><strong>Đang giữ {money(r.amount_vnd)}</strong>{r.status==='pending'?'Yêu cầu chờ duyệt. Bạn có thể hủy để hoàn khoản giữ.':'Yêu cầu đã được duyệt và đang chờ chuyển khoản. Tiền chưa được xác nhận chuyển; không thể tự hủy ở bước này.'}</p>}{['rejected','cancelled'].includes(r.status)&&<p class="finance-notice"><strong>Đã hoàn khoản giữ</strong>{money(r.amount_vnd)} đã được cộng lại vào số dư khả dụng.</p>}{data.payout&&<p class="finance-notice"><strong>Đã xác nhận chuyển {money(data.payout.amount_vnd)}</strong>Mã giao dịch: {data.payout.bank_reference} · {date(data.payout.created_at)}. Nếu chưa thấy tiền, liên hệ quản trị viên và cung cấp mã {r.code}.</p>}{r.status==='pending'&&<form method="post" data-finance-form data-endpoint={'/api/account/withdrawals/'+r.code+'/cancel'} data-confirm="withdrawal-cancel"><input type="hidden" name="version" value={r.version} data-number/><input type="hidden" name="confirmed" value="true"/><p class="cms-form-error" data-finance-error role="alert" hidden></p><button class="button secondary" type="submit">Hủy yêu cầu và hoàn khoản giữ</button></form>}<a class="text-link" href="/tai-khoan/so-du">Xem số dư và sổ giao dịch →</a></section><section class="finance-panel"><h2>Lịch sử xử lý</h2><TopupTimeline events={data.events} labels={withdrawalEventLabels}/></section></>}
+</main><FinanceConfirm/><script>import '../../../scripts/finance';</script></AccountShell>

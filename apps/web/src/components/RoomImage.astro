@@ -1,0 +1,5 @@
+---
+interface Props { photo: number; alt: string; eager?: boolean; class?: string }
+const { photo,alt,eager=false,class:className='' } = Astro.props;
+---
+<div class={'room-photo '+className}><img src={'/images/room-'+(photo%4)+'.webp'} width="762" height="506" alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" fetchpriority={eager ? 'high' : 'auto'}/></div>

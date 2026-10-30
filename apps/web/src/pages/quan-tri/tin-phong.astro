@@ -1,0 +1,84 @@
+---
+import {mapLink,validPoint} from '../../../../shared/maps';
+import CmsLayout from '../../layouts/CmsLayout.astro';
+import ListingStateActions from '../../components/ListingStateActions.astro';
+import app,{can,type Listing} from '@timphongtro/api';
+import {env} from 'cloudflare:workers';
+import {money} from '../../lib/rooms';
+import '../../styles/listings.css';
+
+const status=Astro.url.searchParams.get('status')??'pending';
+const page=Astro.url.searchParams.get('page')??'1';
+const response=await app.fetch(new Request(new URL('/api/cms/listing-submissions?'+new URLSearchParams({status,page}),Astro.url),{headers:{cookie:Astro.request.headers.get('cookie')??''}}),env);
+if(response.status===403)return Astro.rewrite('/403');
+const data=response.ok?await response.json() as {items:(Listing&{display_name:string;phone:string;profile_status:string;email:string})[];total:number;page:number;page_size:number}:null;
+if(!data)Astro.response.status=response.status===400?400:503;
+const labels={draft:'Bản nháp',pending:'Chờ duyệt',published:'Đã xuất bản',rejected:'Cần bổ sung'};
+const pageUrl=(next:number)=>'/quan-tri/tin-phong?'+new URLSearchParams({status,page:String(next)});
+const canEdit=can(Astro.locals.user,'listings.update');
+---
+
+<CmsLayout title="Tin phòng" description="Kiểm tra nội dung, ảnh và xét duyệt tin trước khi xuất bản.">
+ <main id="main-content">
+  <header class="cms-heading">
+   <div><h1>Tin phòng</h1><p>Kiểm tra thông tin phòng và liên hệ trước khi duyệt đăng.</p></div>
+   <a class="button secondary" href="/quan-tri/tin-phong/danh-sach">Quản lý danh sách</a>
+  </header>
+  {Astro.url.searchParams.has('saved')&&<p class="finance-notice" role="status">Đã lưu bản nháp. Bạn có thể mở lại để sửa và gửi duyệt.</p>}
+  {Astro.url.searchParams.has('submitted')&&<p class="finance-notice" role="status">Đã gửi tin chờ xét duyệt. Chưa tính phí hoặc lượt đăng mới.</p>}
+  <section class="cms-sheet">
+   <form method="get" class="cms-filters">
+    <label>Trạng thái<select name="status">{[['pending','Chờ duyệt'],['published','Đã xuất bản'],['rejected','Cần bổ sung'],['draft','Bản nháp'],['all','Tất cả']].map(([value,label])=><option value={value} selected={status===value}>{label}</option>)}</select></label>
+    <button type="submit" class="button secondary">Lọc tin</button>
+   </form>
+   {!data?<p class="alert" role="alert">Chưa tải được danh sách tin. Kiểm tra bộ lọc hoặc tải lại trang.</p>:<>
+    <p class="help">{data.total} tin · Trang {data.page}</p>
+    <div class="report-list">
+     {data.items.length?data.items.map(item=>{
+      const details=JSON.parse(item.details),now=Math.floor(Date.now()/1000);
+      const publicVisible=item.display_state==='available'&&!item.moderation_hidden&&item.published_at!=null&&(item.expires_at??0)>now&&(item.status==='published'||details.keep_public_copy===true);
+      return <article class="report-card">
+       <div class="seller-top">
+        <div><h2>{item.title}</h2><p class="help">{item.display_name??item.email} · {item.phone??'Chưa có số liên hệ'}</p></div>
+        <span class="cms-badge">{item.status==='published'&&(item.expires_at??0)<=now?'Hết hạn':labels[item.status]}</span>
+        {canEdit&&<a class="text-link" href={'/quan-tri/tin-phong/'+item.id+'/sua'}>Sửa chi tiết</a>}
+       </div>
+       <div class="cms-listing-details">
+        <p><strong>Giá thuê: </strong>{money(item.price_vnd)}/tháng</p><p><strong>Diện tích: </strong>{item.area_m2} m²</p>
+        <p><strong>Địa chỉ: </strong>{details.street??'Chưa bổ sung'}</p><p><strong>Hiển thị: </strong>{details.address_visibility==='exact'?'Địa chỉ cụ thể':'Chỉ khu vực'}</p>
+        <p><strong>Tiền cọc: </strong>{money(details.deposit??0)}</p><p><strong>Điện / nước: </strong>{money(details.electricity??0)}/kWh · {money(details.water??0)}{details.water_unit==='per_m3'?'/m³':'/người'}</p>
+        <p><strong>Dịch vụ / xe: </strong>{money(details.service??0)} · {money(details.parking??0)}</p>
+        <p><strong>Gói đăng tin: </strong>{details.quoted_duration?details.quoted_duration+' ngày · '+money(details.quoted_price??0):'Chưa chọn gói'}</p>
+        <p><strong>Số người: </strong>{details.people??'Chưa bổ sung'}</p>
+       </div>
+       {validPoint(details.map_point)&&<a class="text-link" href={mapLink(`${details.map_point.lat},${details.map_point.lng}`)} target="_blank" rel="noopener noreferrer">Kiểm tra vị trí Google Maps ↗</a>}
+       <div class="cms-listing-photos">{(details.photos??[]).map((id:string,index:number)=><a href={'/api/listing-images/'+id} target="_blank" rel="noopener" aria-label={'Xem ảnh '+(index+1)}><img src={'/api/listing-images/'+id} alt={'Ảnh phòng '+(index+1)} width="140" height="105"/></a>)}</div>
+       <p class="cms-listing-description">{item.description}</p>
+       {item.review_note&&<p class="report-notice preserve">{item.review_note}</p>}
+       {publicVisible&&item.status!=='published'&&<p class="help">Bản sửa chưa được xuất bản. Bản đã duyệt tiếp tục hiển thị đến hết thời hạn đã mua.</p>}
+       {publicVisible&&<a class="text-link" href={'/phong/'+item.id} target="_blank" rel="noopener">Xem tin công khai →</a>}
+       {item.status==='pending'&&can(Astro.locals.user,'listings.review')&&<form method="post" action={'/api/cms/listing-submissions/'+item.id+'/review'} class="cms-listing-moderation" data-listing-review data-id={item.id} data-version={item.version}>
+        <div class="field"><label for={'decision-'+item.id}>Kết quả xét duyệt</label><select id={'decision-'+item.id} name="decision"><option value="published">Duyệt và xuất bản</option><option value="rejected">Yêu cầu bổ sung</option></select></div>
+        <div class="field"><label for={'note-'+item.id}>Ghi chú cho người đăng</label><textarea id={'note-'+item.id} name="note" rows="3" maxlength="1000"/></div>
+        <p class="help">Xuất bản lần đầu sẽ dùng 1 lượt miễn phí hoặc trừ phí gói đã chọn. Thiếu số dư, tin tiếp tục chờ duyệt.</p>
+        <p class="alert" data-review-error role="alert" hidden></p><button class="button" type="submit">Lưu kết quả xét duyệt</button>
+       </form>}
+       <ListingStateActions item={item} cms/>
+      </article>;
+     }):<div class="finance-empty"><h2>Chưa có tin phù hợp</h2><p>Thay đổi bộ lọc để xem các tin khác.</p></div>}
+    </div>
+    <nav class="cms-pagination" aria-label="Phân trang tin phòng"><span>{data.page>1&&<a href={pageUrl(data.page-1)}>← Trang trước</a>}</span>{data.page*data.page_size<data.total&&<a href={pageUrl(data.page+1)}>Trang sau →</a>}</nav>
+   </>}
+  </section>
+ </main>
+ <script>
+  import {displayError,readApiJson} from '../../scripts/api-errors';
+  document.querySelectorAll<HTMLFormElement>('[data-listing-review]').forEach(form=>form.addEventListener('submit',async event=>{
+   event.preventDefault();const values=new FormData(form),error=form.querySelector<HTMLElement>('[data-review-error]')!,button=form.querySelector<HTMLButtonElement>('button[type=submit]')!;error.hidden=true;
+   if(values.get('decision')==='rejected'&&String(values.get('note')).trim().length<5){error.textContent='Nhập góp ý từ 5 ký tự để người đăng biết cần bổ sung gì.';error.hidden=false;return;}
+   button.disabled=true;
+   try{const response=await fetch('/api/cms/listing-submissions/'+form.dataset.id+'/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({version:Number(form.dataset.version),decision:values.get('decision'),note:values.get('note')})});await readApiJson(response,'Chưa lưu được kết quả xét duyệt. Tải lại trang để kiểm tra trạng thái rồi thử lại.');location.reload();}
+   catch(cause){error.textContent=displayError(cause,'Chưa lưu được kết quả xét duyệt. Kiểm tra kết nối rồi thử lại.');error.hidden=false;button.disabled=false;}
+  }));
+ </script>
+</CmsLayout>

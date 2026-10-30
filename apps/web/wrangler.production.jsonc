@@ -1,0 +1,42 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "timphongtro",
+  "compatibility_date": "2026-10-26",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "trotothcm.id.vn",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.trotothcm.id.vn",
+      "custom_domain": true
+    }
+  ],
+  "preview_urls": false,
+  "logpush": false,
+  "vars": {
+    "EMAIL_VERIFICATION_REQUIRED": "true"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "timphongtro-db",
+      "database_id": "53bbfe5b-25d6-419a-b89e-f450d795027c",
+      "migrations_dir": "../api/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "LISTING_IMAGES",
+      "bucket_name": "timphongtro-images"
+    }
+  ]
+}

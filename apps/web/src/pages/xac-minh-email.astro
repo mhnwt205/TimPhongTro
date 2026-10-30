@@ -1,0 +1,19 @@
+---
+import AuthLayout from '../layouts/AuthLayout.astro';
+import '../styles/refresh.css';
+const token=Astro.url.searchParams.get('token')??'';
+const validToken=/^[a-f0-9]{64}$/.test(token);
+const sent=Astro.url.searchParams.get('sent')==='1';
+const heading=sent?'Đăng ký thành công':validToken?'Xác minh email':'Kiểm tra email';
+const intro=sent?'Vui lòng kiểm tra email và mở liên kết xác minh để kích hoạt tài khoản.':validToken?'Xác minh địa chỉ email để hoàn tất đăng ký. Sau đó bạn có thể đăng nhập.':'Nếu bạn vừa đăng ký, hãy mở email hướng dẫn để xác minh địa chỉ trước khi đăng nhập.';
+---
+<AuthLayout title={heading} heading={heading} intro={intro}>
+{!sent&&<>
+{Astro.url.searchParams.has('token')&&!validToken&&<p class="alert" role="alert">Liên kết xác minh không hợp lệ. Bạn có thể yêu cầu gửi liên kết mới bên dưới.</p>}
+<p class="profile-success" data-email-status role="status" hidden></p><p class="alert" data-email-error role="alert" hidden></p>
+{validToken&&<form class="auth-form" data-email-action="verify"><input type="hidden" name="token" value={token}/><button class="button full" type="submit">Xác minh email</button></form>}
+{!validToken&&<form class="auth-form" data-email-action="verify-request"><div class="field"><label for="verify-email">Email đăng ký</label><input id="verify-email" name="email" type="email" autocomplete="email" required maxlength="254"/></div><button class="button full" type="submit">Gửi lại liên kết xác minh</button></form>}
+<p class="auth-switch" data-email-login-link hidden><a href="/dang-nhap">Đăng nhập</a></p>
+{!validToken&&<p class="auth-switch"><a href="/dang-nhap">Quay lại đăng nhập</a></p>}<script>import '../scripts/email-actions';</script>
+</>}
+</AuthLayout>

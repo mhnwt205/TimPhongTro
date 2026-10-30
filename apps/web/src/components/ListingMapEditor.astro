@@ -1,0 +1,21 @@
+---
+import '../styles/maps.css';
+import 'leaflet/dist/leaflet.css';
+import {validPoint} from '../../../shared/maps';
+interface Props{point?:unknown;street?:string}
+const point=validPoint(Astro.props.point)?Astro.props.point:null;
+---
+<section class="profile-card listing-map-editor" data-map-editor>
+<header><div><h2>Địa chỉ và bản đồ</h2><p>Nhập địa chỉ rồi nhấn Enter hoặc Tìm địa chỉ. Bạn cũng có thể bấm vị trí phòng trên bản đồ.</p></div></header>
+<div class="field"><label for="listing-street">Địa chỉ phòng</label><input id="listing-street" name="street" maxlength="200" value={Astro.props.street??''} placeholder="Số nhà, đường, phường hoặc điểm gần phòng" autocomplete="street-address"/><small>Chọn gợi ý hoặc bấm trên bản đồ. Kiểm tra lại số nhà trước khi gửi tin.</small></div>
+<div class="map-editor-actions"><button class="button secondary" type="button" data-map-address>Tìm địa chỉ</button></div>
+<div class="map-suggestions" hidden data-map-suggestions aria-label="Địa chỉ gợi ý"></div><p class="help" role="status" data-map-status></p>
+<div class="interactive-map" role="region" aria-label="Bản đồ chọn vị trí phòng" data-interactive-map></div>
+<p class="help" data-map-privacy>Chỉ khu vực đã chọn được hiển thị công khai.</p>
+<details class="map-alternatives"><summary>Chọn vị trí theo cách khác</summary>
+<div class="field"><label for="map-link">Liên kết Google Maps <span class="profile-optional">(tùy chọn)</span></label><input id="map-link" type="url" maxlength="2000" placeholder="Dán liên kết vị trí từ Google Maps" data-map-link/></div>
+<div class="map-editor-actions"><button class="button secondary" type="button" data-map-current>Dùng vị trí hiện tại</button><button class="text-button" type="button" data-map-clear>Bỏ điểm đã chọn</button></div>
+<input id="map-lat" name="map_lat" type="hidden" value={point?.lat}/><input id="map-lng" name="map_lng" type="hidden" value={point?.lng}/>
+<a class="text-link" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" data-map-open>Mở Google Maps ↗</a>
+</details></section>
+<script>import '../scripts/listing-map';</script>

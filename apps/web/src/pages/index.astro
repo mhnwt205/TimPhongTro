@@ -1,0 +1,42 @@
+---
+import Base from '../layouts/Base.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import RoomImage from '../components/RoomImage.astro';
+import RoomCard from '../components/RoomCard.astro';
+import Icon from '../components/Icon.astro';
+import { filterRooms } from '../lib/rooms';
+import {catalog} from '../lib/catalog';
+import {env} from 'cloudflare:workers';
+import {getWebsiteSettings} from '@timphongtro/api';
+const [{rooms,areas},copy]=await Promise.all([catalog(),getWebsiteSettings(env.DB)]);
+const type=Astro.url.searchParams.get('type') ?? '';
+const areaCount=(area:string)=>rooms.filter(room=>room.area===area).length;
+const featured=filterRooms(Astro.url.searchParams,rooms).slice(0,12);
+---
+<Base title="Tìm Phòng Trọ tại TP.HCM — Phòng trọ và căn hộ mini" description="Khám phá phòng trọ và căn hộ mini tại TP.HCM theo ngân sách, khu vực và tiện ích bạn cần." robots="index, follow" imageWidth={1200} imageHeight={630}>
+  <SiteHeader active="browse"/>
+  <main id="main-content" class="container">
+    <section class="home-intro" aria-labelledby="home-title"><div class="home-intro-copy"><h1 id="home-title">{copy.home_title}</h1><p>{copy.home_subtitle}</p>
+      <form class="search-form" method="get" action="/tim-phong"><div class="search-field"><label for="home-area">Bạn muốn ở đâu?</label><select id="home-area" name="area"><option value="">Mọi khu vực</option>{areas.map(area=><option value={area.id}>{area.name}</option>)}</select></div><div class="search-field"><label for="home-price">Giá thuê mỗi tháng</label><select id="home-price" name="max"><option value="">Mọi mức giá</option><option value="3000000">Dưới 3 triệu</option><option value="4000000">Đến 4 triệu</option><option value="5000000">Đến 5 triệu</option></select></div><button type="submit" class="button"><Icon name="search" size={18}/>Tìm phòng</button></form>
+      <div class="quick-links" aria-label="Tìm nhanh"><a href="/tim-phong?max=3000000">Dưới 3 triệu</a><a href="/tim-phong?amenity=furnished">Có nội thất</a><a href="/tim-phong?amenity=loft">Có gác</a></div>
+    </div><figure class="hero-photo"><RoomImage photo={0} alt="Không gian studio sáng và gọn gàng" eager/><figcaption><span>{copy.home_photo_caption}</span><Icon name="sun" size={16}/></figcaption></figure></section>
+    <section class="section" aria-labelledby="explore-title"><div class="section-heading"><div><h2 id="explore-title">Khám phá chỗ ở</h2></div><a href="/tim-phong" class="text-link">Xem tất cả<Icon name="arrow" size={16}/></a></div>
+      <nav class="room-tabs" aria-label="Loại phòng"><a href="/" aria-current={!type?'page':undefined}>Tất cả</a><a href="/?type=room" aria-current={type==='room'?'page':undefined}>Phòng trọ</a><a href="/?type=mini" aria-current={type==='mini'?'page':undefined}>Căn hộ mini</a></nav><div class="room-grid">{featured.length?featured.map((room,i)=><RoomCard room={room} eager={i<3}/>):<div class="empty-state"><Icon name="search" size={28}/><h3>Chưa có phòng phù hợp</h3><p>Thử chọn loại phòng khác để xem thêm lựa chọn.</p><a href="/tim-phong" class="button secondary">Xem tất cả phòng</a></div>}</div>
+    </section>
+    <section class="section" aria-labelledby="areas-title"><div class="section-heading"><div><h2 id="areas-title">Bạn muốn ở khu vực nào?</h2><p>Gần nơi học, tiện đường đi làm.</p></div></div><div class="area-grid">{areas.map(area=><a class="area-card" href={'/tim-phong?area='+area.id}><span class="area-card-icon"><Icon name="pin" size={19}/></span><span class="area-card-copy"><strong>{area.name}</strong><small>{areaCount(area.id)} tin đang đăng</small></span><span class="area-card-action"><Icon name="arrow" size={17}/></span></a>)}</div></section>
+    <section class="seller-invitation" aria-labelledby="seller-title"><div><span class="seller-invitation-kicker"><Icon name="home" size={15}/>Dành cho chủ trọ và môi giới</span><h2 id="seller-title">{copy.seller_cta_title}</h2><p>{copy.seller_cta_body.replaceAll('{{free_posts}}',String(copy.free_posts_new_account))}</p></div><a href="/dang-tin" class="button">Bắt đầu đăng tin<Icon name="arrow" size={17}/></a></section>
+  </main><SiteFooter/>
+  <script type="application/ld+json" nonce={Astro.locals.cspNonce} set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Tìm Phòng Trọ',
+    url: Astro.site?.href,
+    inLanguage: 'vi-VN',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${new URL('/tim-phong', Astro.site)}?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  }).replaceAll('<', '\\u003c')} />
+</Base>

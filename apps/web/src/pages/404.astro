@@ -1,0 +1,9 @@
+---
+import Base from '../layouts/Base.astro';
+import PageBanner from '../components/PageBanner.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import Icon from '../components/Icon.astro';
+Astro.response.status=404;
+---
+<Base title="Không tìm thấy trang — Tìm Phòng Trọ" description="Trang bạn tìm chưa tồn tại hoặc đã được thay đổi."><SiteHeader/><main id="main-content" class="container"><PageBanner title="Không tìm thấy trang">Tiếp tục tìm một chỗ ở phù hợp tại TP.HCM.</PageBanner><div class="empty-state"><Icon name="home" size={36}/><h2>Thử một lối đi khác</h2><p>Đường dẫn có thể đã thay đổi. Bạn có thể quay lại danh sách để tiếp tục tìm phòng.</p><a class="button" href="/tim-phong">Về trang tìm phòng</a></div></main><SiteFooter/></Base>

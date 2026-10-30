@@ -1,0 +1,11 @@
+---
+import InactiveListing from '../../../components/InactiveListing.astro';
+import {inactiveListing} from '@timphongtro/api';
+import {env} from 'cloudflare:workers';
+import {catalog} from '../../../lib/catalog';
+const listing=await inactiveListing(env.DB,Astro.params.id??'');
+if(!listing)return Astro.rewrite('/404');
+const {rooms}=await catalog();
+const related=rooms.filter(room=>room.id!==listing.id).sort((a,b)=>Number(b.area===listing.area)-Number(a.area===listing.area)).slice(0,4);
+---
+<InactiveListing listing={listing} related={related}/>

@@ -1,0 +1,12 @@
+---
+import BrandLogo from './BrandLogo.astro';
+import {env} from 'cloudflare:workers';
+import {getWebsiteSettings} from '@timphongtro/api';
+const copy=await getWebsiteSettings(env.DB);
+const publicPages=(await env.DB.prepare('SELECT slug,title FROM content_pages WHERE is_active=1 AND deleted_at IS NULL ORDER BY title,slug').all<{slug:string;title:string}>()).results;
+---
+<footer class="site-footer"><div class="container footer-grid"><div><a class="brand" href="/"><BrandLogo/><span>Tìm Phòng Trọ.</span></a><p>{copy.footer_description}</p><p class="footer-caption">{copy.footer_caption}</p></div><div><h2>Tìm chỗ ở</h2><a href="/tim-phong">Tất cả phòng</a><a href="/tim-phong?max=3000000">Giá thuê dưới 3 triệu</a><a href="/tim-phong?type=mini">Căn hộ mini</a><a href="/phong-da-luu">Phòng đã lưu</a></div><div><h2>Dành cho người đăng</h2><a href="/dang-ky">Tạo tài khoản</a><a href="/tai-khoan/ho-so">Hồ sơ người đăng</a><a href="/bang-gia">Gói đăng tin</a><a href="/dang-tin">Hướng dẫn đăng tin</a></div>{publicPages.length>0&&<div><h2>Thông tin & hỗ trợ</h2><a class="footer-hub-link" href="/thong-tin">Tất cả thông tin <span aria-hidden="true">↗</span></a>{publicPages.map(page=><a href={'/thong-tin/'+page.slug}>{page.title}</a>)}</div>}</div><div class="container footer-bottom"><span>© {new Date().getFullYear()} Tìm Phòng Trọ</span><span>Kết nối chỗ ở tại TP.HCM</span></div></footer>
+<style>
+.footer-grid:has(>div:nth-child(4)){grid-template-columns:1.6fr repeat(3,minmax(0,1fr))}
+@media(max-width:1023px){.footer-grid:has(>div:nth-child(4)){grid-template-columns:repeat(2,minmax(0,1fr))}.footer-grid:has(>div:nth-child(4))>div:first-child{grid-column:1/-1}}
+</style>

@@ -1,0 +1,9 @@
+---
+import {env} from 'cloudflare:workers';
+import {getWebsiteSettings} from '@timphongtro/api';
+interface Props { title:string; listingId:string }
+const {title,listingId}=Astro.props;
+const copy=await getWebsiteSettings(env.DB);
+const before=copy.disclaimer_before_report.split('{{title}}');
+---
+<section class="listing-disclaimer" aria-label="Lưu ý về nội dung tin đăng"><h2>{copy.disclaimer_title}</h2><p>{before[0]}<strong>{title}</strong>{before.slice(1).join(title)} <a href={'/bao-cao-tin?'+new URLSearchParams({tin:listingId})} title={'Gửi báo cáo về tin '+title}>gửi báo cáo</a> {copy.disclaimer_after_report}</p></section>

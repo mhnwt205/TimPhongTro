@@ -1,0 +1,15 @@
+---
+import Base from '../layouts/Base.astro';
+import SiteHeader from './SiteHeader.astro';
+import SiteFooter from './SiteFooter.astro';
+import RoomCard from './RoomCard.astro';
+import type {InactiveListing} from '@timphongtro/api';
+import type {Room} from '../../../shared/rooms';
+interface Props {listing:InactiveListing;related:Room[]}
+const {listing,related}=Astro.props;
+const status=listing.state==='unavailable'?'Phòng đã hết / không còn cho thuê':'Tin đăng đã hết hạn';
+---
+<Base title={status+' — Tìm Phòng Trọ'} description={status+' tại '+listing.areaLabel+'. Xem các phòng đang cho thuê khác.'}>
+<SiteHeader active="browse"/><main id="main-content" class="container inactive-listing"><section class="detail-sheet"><span class="detail-type">{status}</span><h1>{listing.title}</h1><p>{listing.areaLabel}, TP.HCM</p><p>Tin này hiện không còn nằm trong danh sách phòng đang cho thuê. Ảnh, địa chỉ cụ thể và thông tin liên hệ được ẩn để tránh liên hệ nhầm.</p><a class="button" href={'/tim-phong?area='+encodeURIComponent(listing.area)}>Tìm phòng trong khu vực</a></section>{related.length>0&&<section class="section"><div class="section-heading"><h2>Phòng khác dành cho bạn</h2></div><div class="room-grid">{related.map(room=><RoomCard room={room}/>)}</div></section>}</main><SiteFooter/>
+</Base>
+<style>.inactive-listing{padding-block:32px}.inactive-listing h1{margin-top:14px;overflow-wrap:anywhere}.inactive-listing p{margin-top:16px}.inactive-listing .button{margin-top:24px}</style>

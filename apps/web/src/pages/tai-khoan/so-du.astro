@@ -1,0 +1,15 @@
+---
+import AccountShell from '../../layouts/AccountShell.astro';
+import Icon from '../../components/Icon.astro';
+import WalletLedger from '../../components/WalletLedger.astro';
+import type {WalletSummary,WalletEntry} from '@timphongtro/api';
+import {financeRead,money,type Page} from '../../lib/finance';
+const {data,status}=await financeRead<WalletSummary&{ledger:Page<WalletEntry>}>('/api/account/wallet?page='+(Astro.url.searchParams.get('page')??'1'),Astro.url,Astro.request.headers.get('cookie'));
+if(!data)Astro.response.status=status;
+---
+<AccountShell title="Số dư đăng tin" description="Theo dõi số dư, ưu đãi và lịch sử giao dịch đăng tin."><main id="main-content" class="account-main"><div class="page-heading"><h1>Số dư đăng tin</h1><p>Theo dõi tiền đã nạp và lịch sử cộng, trừ số dư của bạn.</p></div>
+{!data?<p class="alert" role="alert">Không tải được số dư. Hãy thử tải lại trang.</p>:<>
+<div class="finance-summary"><section class="finance-balance"><span><Icon name="wallet" size={18}/>Số dư khả dụng</span><strong>{money(data.balance_vnd)}</strong><p>Dùng trả phí đăng tin hoặc gửi yêu cầu rút về ngân hàng.</p><a class="text-link" href="/tai-khoan/nap-tien">Yêu cầu nạp tiền <Icon name="arrow" size={16}/></a><p>Đang giữ để rút: <b>{money(data.held_vnd)}</b></p><a class="text-link" href="/tai-khoan/rut-tien">Yêu cầu rút <Icon name="arrow" size={16}/></a></section><section class="finance-promotion"><span><Icon name="check" size={18}/>Lượt đăng miễn phí</span><strong>{data.free_posts_remaining} / {data.free_posts_total}</strong><p>Dùng trước số dư tiền, mỗi lượt dành cho một tin được duyệt xuất bản.</p></section></div>
+{!data.payments_enabled&&<p class="finance-notice"><strong>Chưa mở nạp tiền</strong>Thanh toán trực tuyến đang tạm đóng. Bạn vẫn có thể xem số dư và lịch sử hiện có.</p>}
+<section class="finance-panel"><h2>Sổ giao dịch</h2><WalletLedger ledger={data.ledger} pagePath="/tai-khoan/so-du"/></section></>}
+</main></AccountShell>

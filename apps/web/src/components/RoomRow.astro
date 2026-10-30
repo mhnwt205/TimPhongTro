@@ -1,0 +1,8 @@
+---
+import ListingPhoto from './ListingPhoto.astro';
+import Icon from './Icon.astro';
+import {areaName,rentLabel,amenities,type Room} from '../lib/rooms';
+interface Props{room:Room;eager?:boolean}
+const {room,eager=false}=Astro.props;
+---
+<article class="room-row" data-room-card={room.id}><a href={'/phong/'+room.id} class="room-row-gallery" aria-label={'Xem '+room.title}><ListingPhoto room={room} eager={eager}/><ListingPhoto room={room} index={1}/><ListingPhoto room={room} index={2}/>{room.images&&<span class="room-row-photo-count">{room.images.length} ảnh</span>}</a><div class="room-row-content"><div class="room-row-labels"><span class="room-row-type">{room.type==='mini'?'Căn hộ mini':'Phòng trọ'}</span>{room.is_priority&&<span class="priority-badge compact">Ưu tiên</span>}</div><h2><a href={'/phong/'+room.id}>{room.title}</a></h2><div class="room-row-facts"><strong class="room-card-price">{rentLabel(room.rent)} <span>/tháng</span></strong><span>{room.size} m²</span><span>{room.people} người</span></div><div class="room-row-amenities">{amenities.filter(a=>room.amenities.includes(a.id)).slice(0,3).map(a=><span>{a.name}</span>)}</div><p class="room-row-address"><Icon name="pin" size={15}/>{room.street}, {room.areaLabel??areaName(room.area)}</p><p class="room-row-description">{room.description}</p><footer><span>{room.seller?.name??'Người đăng phòng'}</span><a class="text-link" href={'/phong/'+room.id}>Xem chi tiết →</a><button class="icon-button save-button" type="button" data-save-room={room.id} data-room-title={room.title} aria-label={'Lưu '+room.title} aria-pressed="false" title="Lưu phòng yêu thích"><Icon name="heart" size={19}/></button></footer></div></article>

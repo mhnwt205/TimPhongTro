@@ -1,0 +1,17 @@
+---
+import Icon from './Icon.astro';
+import type {CmsNotifications} from '@timphongtro/api';
+interface Props { data:CmsNotifications|null; auditAccess:boolean }
+const {data,auditAccess}=Astro.props;
+const time=(n:number)=>new Date(n*1000).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+---
+<details class="cms-notification" data-notification-root>
+ <summary class="cms-bell" aria-label={data?.pending?`Thông báo, ${data.pending} mục cần xử lý`:'Thông báo và công việc'} aria-controls="cms-notification-panel"><Icon name="bell" size={21}/><span class="cms-bell-count" data-notification-count hidden={!data?.pending}>{data?.pending&&data.pending>99?'99+':data?.pending??0}</span></summary>
+ <section class="cms-notification-panel" id="cms-notification-panel" aria-labelledby="notification-title">
+  <header><div><h2 id="notification-title">Thông báo</h2><p data-notification-caption>{data?`${data.pending} mục cần xử lý`:'Chưa tải được thông báo'}</p></div><button type="button" class="icon-button" data-close-notifications aria-label="Đóng thông báo"><Icon name="close" size={18}/></button></header>
+  <p class="cms-notification-error" data-notification-error role="status" hidden={Boolean(data)}>Không tải được thông báo. Thử mở lại bảng để cập nhật.</p>
+  <div class="cms-notification-section"><h3>Công việc cần xử lý</h3><div data-notification-queue>{data?.items.length?data.items.map(item=><a class="cms-notice-row" href={item.href}><span class="cms-notice-dot"></span><div><strong>{item.title}<b>{item.count}</b></strong><p>{item.description}</p></div><Icon name="chevron" size={15}/></a>):<p class="cms-notice-empty">{data?'Không có công việc chờ trong phạm vi của bạn.':'Chưa có dữ liệu.'}</p>}</div></div>
+  {auditAccess&&<div class="cms-notification-section"><h3>Hoạt động gần đây</h3><div data-notification-activity>{data?.activity.length?data.activity.map(item=><a class="cms-notice-row" href={item.href}><span class="cms-notice-dot neutral"></span><div><strong>{item.label}</strong><p>{item.actor} · {time(item.created_at)}</p></div></a>):<p class="cms-notice-empty">Chưa có hoạt động quản trị.</p>}</div><a class="cms-notification-all" href="/quan-tri/nhat-ky">Xem nhật ký đầy đủ <Icon name="arrow" size={15}/></a></div>}
+  <footer>Thông báo hiển thị theo quyền của bạn.</footer>
+ </section>
+</details>

@@ -1,0 +1,10 @@
+---
+import AuthLayout from '../layouts/AuthLayout.astro';
+import '../styles/refresh.css';
+const token=Astro.url.searchParams.get('token')??'';
+---
+<AuthLayout title="Tạo mật khẩu mới" heading="Tạo mật khẩu mới" intro="Liên kết chỉ dùng một lần và có thời hạn. Chọn mật khẩu từ 12 ký tự.">
+<p class="profile-success" data-email-status role="status" hidden></p><p class="alert" data-email-error role="alert" hidden></p>
+<form class="auth-form" data-email-action="reset-complete"><input type="hidden" name="token" value={token}/><div class="field"><label for="new-password">Mật khẩu mới</label><input id="new-password" name="password" type="password" required minlength="12" maxlength="128" autocomplete="new-password"/></div><div class="field"><label for="confirm-password">Nhập lại mật khẩu</label><input id="confirm-password" name="password_confirmation" type="password" required minlength="12" maxlength="128" autocomplete="new-password"/></div><button class="button full" type="submit" disabled={!/^[a-f0-9]{64}$/.test(token)}>Lưu mật khẩu mới</button></form>
+<p class="auth-switch"><a href="/dang-nhap">Quay lại đăng nhập</a></p><script>import '../scripts/email-actions';</script>
+</AuthLayout>

@@ -1,0 +1,20 @@
+---
+import {bankDirectory} from '@timphongtro/api';
+import Icon from './Icon.astro';
+interface Props { id:string; name:string; label:string; selected?:string; disabled?:boolean; required?:boolean; syncName?:boolean }
+const {id,name,label,selected='',disabled=false,required=false,syncName=false}=Astro.props;
+const popular=['VCB','TPB','STB','MB','TCB','ACB','VPB','BIDV','CTG','AGRIBANK','VIB','HDB'];
+const common=popular.flatMap(code=>bankDirectory.filter(b=>b.code===code));
+const other=bankDirectory.filter(b=>!popular.includes(b.code)).sort((a,b)=>a.name.localeCompare(b.name,'vi'));
+const option=(b:typeof bankDirectory[number])=>({value:b.code,selected:selected===b.code,'data-bank-name':b.name,'data-bank-full-name':b.fullName,'data-bank-search-text':b.code+' '+b.name+' '+b.fullName+' '+b.keywords});
+---
+<div class="field bank-picker" data-bank-picker>
+ <label for={id} data-bank-label>{label}</label>
+ <select id={id} name={name} required={required} disabled={disabled} data-bank-select data-bank-code={syncName||undefined}><option value="">Chọn ngân hàng</option><optgroup label="Ngân hàng phổ biến">{common.map(b=><option {...option(b)}>{b.name}</option>)}</optgroup><optgroup label="Ngân hàng khác">{other.map(b=><option {...option(b)}>{b.name}</option>)}</optgroup></select>
+ <div class="bank-combobox" hidden data-bank-combobox>
+  <div class="bank-input-wrap"><input id={id+'-input'} type="text" maxlength="100" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls={id+'-list'} aria-describedby={id+'-status'} placeholder="Chọn hoặc nhập tên ngân hàng" autocomplete="off" spellcheck="false" disabled data-bank-input/><Icon name="down" size={18}/></div>
+  <div class="bank-dropdown" hidden data-bank-dropdown><div id={id+'-list'} role="listbox" aria-label={label} data-bank-list></div><p hidden data-bank-empty>Không tìm thấy ngân hàng. Thử tên hoặc viết tắt khác.</p></div>
+ </div>
+ <span id={id+'-status'} class="sr-only" aria-live="polite" data-bank-status></span>
+</div>
+<script>import '../scripts/banks';</script>

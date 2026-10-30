@@ -1,0 +1,7 @@
+---
+import type {Event} from '../lib/finance';
+import {eventLabels,date} from '../lib/finance';
+interface Props { events:Event[]; labels?:Record<string,string> }
+const {events,labels=eventLabels}=Astro.props;
+---
+<ol class="finance-timeline">{events.map(event=><li><div><strong>{labels[event.action]??event.action}</strong><time datetime={new Date(event.created_at*1000).toISOString()}>{date(event.created_at)}</time></div>{event.note&&<p class="preserve">{event.note}</p>}</li>)}</ol>

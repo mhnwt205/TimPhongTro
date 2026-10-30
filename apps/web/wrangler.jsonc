@@ -1,0 +1,24 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "timphongtro-local",
+  "compatibility_date": "2026-10-26",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": false,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "timphongtro-local",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "../api/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "LISTING_IMAGES",
+      "bucket_name": "timphongtro-images-local"
+    }
+  ]
+}

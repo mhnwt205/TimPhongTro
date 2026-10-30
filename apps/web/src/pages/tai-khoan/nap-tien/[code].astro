@@ -1,0 +1,31 @@
+---
+import AccountShell from '../../../layouts/AccountShell.astro';
+import FinanceConfirm from '../../../components/FinanceConfirm.astro';
+import TopupTimeline from '../../../components/TopupTimeline.astro';
+import Icon from '../../../components/Icon.astro';
+import type {Topup} from '@timphongtro/api';
+import {financeRead,money,date,topupLabels,type Event} from '../../../lib/finance';
+const payment=Astro.url.searchParams.get('payment');
+const {data,status}=await financeRead<{topup:Topup;events:Event[];qr_available:boolean}>('/api/account/topups/'+encodeURIComponent(Astro.params.code??''),Astro.url,Astro.request.headers.get('cookie'));
+if(status===404)return Astro.rewrite('/404');if(!data)Astro.response.status=status;
+const t=data?.topup,legacy=t?.payment_provider==='manual';
+const poll=payment==='success'&&t?.status==='pending';
+---
+<AccountShell title="Chi tiết yêu cầu nạp" description="Theo dõi trạng thái thanh toán và số dư trong tài khoản."><main id="main-content" class="account-main"><a class="finance-back" href="/tai-khoan/nap-tien">← Danh sách yêu cầu</a><div class="finance-page-heading"><div><h1>Yêu cầu {t?.code??'nạp tiền'}</h1><p>Giao dịch được xác nhận an toàn trước khi cộng vào số dư.</p></div>{t&&<span class={'finance-status '+t.status}>{topupLabels[t.status]}</span>}</div>
+{!t||!data?<p class="alert" role="alert">Không tải được chi tiết yêu cầu nạp. Quay lại danh sách hoặc tải lại trang.</p>:<><div class="finance-layout"><section class="finance-panel"><h2>{t.status==='credited'?'Kết quả thanh toán':legacy?'Thông tin chuyển khoản':'Thanh toán qua SePay'}</h2>
+{t.status==='credited'?<div class="finance-notice"><strong>Đã cộng {money(t.credited_vnd!)} vào số dư</strong>Thời điểm ghi nhận: {date(t.credited_at!)}. <a class="text-link" href="/tai-khoan/so-du">Xem sổ giao dịch <Icon name="arrow" size={15}/></a></div>:t.status==='cancelled'?<div class="finance-notice warning"><strong>Yêu cầu đã hủy</strong>Không tiếp tục thanh toán yêu cầu này. Nếu giao dịch đã hoàn tất trước khi hủy, hãy liên hệ hỗ trợ.</div>:t.status==='needs_review'?<div class="finance-notice warning"><strong>Đang kiểm tra giao dịch</strong>Đừng thanh toán lại yêu cầu này. Chúng tôi sẽ cập nhật trạng thái sau khi kiểm tra.</div>:legacy?<p class="help">Yêu cầu này được tạo trước khi chuyển sang thanh toán trực tuyến. Hướng dẫn chuyển khoản cũ vẫn được giữ để bạn theo dõi.</p>:<>
+{poll&&<p class="finance-notice" role="status" data-topup-status-poll={'/api/account/topups/'+encodeURIComponent(t.code)+'/verify'}><strong>Đang xác nhận thanh toán</strong>SePay đã chuyển bạn về website. Trang đang kiểm tra giao dịch; không thanh toán lần nữa.</p>}
+{payment==='error'&&<p class="finance-notice warning"><strong>Thanh toán chưa hoàn tất</strong>Bạn có thể thử thanh toán lại bằng nút bên dưới.</p>}
+{payment==='cancel'&&<p class="finance-notice"><strong>Bạn đã dừng thanh toán</strong>Yêu cầu vẫn còn hiệu lực nếu bạn muốn thử lại.</p>}
+<p class="help">Số tiền: <strong class="finance-number">{money(t.requested_vnd)}</strong>. Sau khi SePay xác nhận giao dịch thành công, số dư sẽ được cộng tự động.</p>
+{!poll&&<button class="button full" type="button" data-sepay-checkout={t.code}>Thanh toán qua SePay <Icon name="arrow" size={16}/></button>}
+<p class="cms-form-error" data-sepay-error role="alert" hidden></p>
+</>}
+{legacy&&t.status==='pending'&&data.qr_available&&<section class="finance-qr" aria-label="Mã QR chuyển khoản"><div class="finance-qr-image"><img src={'/api/account/topups/'+encodeURIComponent(t.code)+'/qr'} width="300" height="300" alt={'VietQR chuyển '+money(t.requested_vnd)+' đến '+t.bank_name+', nội dung '+t.code} data-topup-qr/></div><div><h3>Quét QR để chuyển khoản</h3><p class="help">QR điền sẵn {money(t.requested_vnd)} và nội dung <strong>{t.code}</strong>.</p><button type="button" class="button secondary" hidden data-download-topup-qr data-qr-filename={t.code}>Lưu ảnh QR</button></div></section>}
+{legacy&&<dl class="finance-details"><div><dt>Số tiền yêu cầu</dt><dd class="finance-number">{money(t.requested_vnd)}</dd></div><div><dt>Ngân hàng</dt><dd>{t.bank_name}</dd></div><div><dt>Chủ tài khoản</dt><dd>{t.account_holder}</dd></div><div><dt>Số tài khoản</dt><dd class="finance-number">{t.account_number}</dd></div><div><dt>Nội dung chuyển khoản</dt><dd class="finance-transfer-content">{t.code}</dd></div></dl>}
+{t.review_note&&<p class="finance-notice warning preserve"><strong>Thông tin xử lý</strong>{t.review_note}</p>}
+{legacy&&t.status==='pending'&&<><form method="post" class="finance-report-form" data-finance-form data-endpoint={'/api/account/topups/'+t.code+'/report'} data-confirm="report"><input type="hidden" name="version" value={t.version} data-number/><div class="field"><label for="transfer-note">Ghi chú chuyển khoản (không bắt buộc)</label><textarea id="transfer-note" name="note" rows="3" maxlength="500"/></div><p class="cms-form-error" data-finance-error role="alert" hidden></p><button class="button full" type="submit">Đã chuyển khoản</button></form></>}
+{t.status==='pending'&&!poll&&<form method="post" style="margin-top:12px" data-finance-form data-endpoint={'/api/account/topups/'+t.code+'/cancel'} data-confirm="cancel"><input type="hidden" name="version" value={t.version} data-number/><p class="help">Chỉ hủy khi bạn chưa hoàn tất thanh toán.</p><p class="cms-form-error" data-finance-error role="alert" hidden></p><button class="button secondary full" type="submit">Hủy yêu cầu chưa thanh toán</button></form>}
+{t.status==='reported'&&<p class="finance-notice">Yêu cầu cũ đang chờ được kiểm tra.</p>}
+</section><aside class="finance-panel"><h2>Lịch sử yêu cầu</h2><TopupTimeline events={data.events}/></aside></div></>}
+</main><FinanceConfirm/><script>import '../../../scripts/finance';</script></AccountShell>

@@ -1,0 +1,24 @@
+{
+  "name": "@timphongtro/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host 0.0.0.0 --port 4321",
+    "build": "astro build",
+    "typecheck": "astro check",
+    "db:local": "wrangler d1 migrations apply timphongtro-local --local --config wrangler.jsonc"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "14.4.3",
+    "@timphongtro/api": "*",
+    "astro": "7.4.2",
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.9",
+    "@types/leaflet": "^1.9.20",
+    "typescript": "5.9.3",
+    "wrangler": "4.155.0"
+  }
+}

@@ -1,0 +1,9 @@
+---
+import AuthLayout from '../layouts/AuthLayout.astro';
+import '../styles/refresh.css';
+---
+<AuthLayout title="Quên mật khẩu" heading="Đặt lại mật khẩu" intro="Nhập email đăng ký. Nếu tài khoản phù hợp, bạn sẽ nhận được liên kết để tạo mật khẩu mới.">
+<p class="profile-success" data-email-status role="status" hidden></p><p class="alert" data-email-error role="alert" hidden></p>
+<form class="auth-form" data-email-action="reset-request"><div class="field"><label for="reset-email">Email</label><input id="reset-email" name="email" type="email" required maxlength="254" autocomplete="email"/></div><button class="button full" type="submit">Gửi hướng dẫn</button></form>
+<p class="auth-switch"><a href="/xac-minh-email">Chưa nhận được email xác minh?</a></p><p class="auth-switch"><a href="/dang-nhap">Quay lại đăng nhập</a></p><script>import '../scripts/email-actions';</script>
+</AuthLayout>

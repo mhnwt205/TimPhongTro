@@ -1,0 +1,71 @@
+---
+import Icon from './Icon.astro';
+import ListingMapEditor from './ListingMapEditor.astro';
+import {amenities,money} from '../lib/rooms';
+import type {Listing,ListingDetails} from '@timphongtro/api';
+import '../styles/profile.css';
+import '../styles/listings.css';
+interface Props {item?:Listing;data:any;mode?:'seller'|'cms';editable?:boolean}
+const {item,data,mode='seller',editable=true}=Astro.props;
+const d:Partial<ListingDetails>=item?JSON.parse(item.details):{};
+const approved=mode==='cms'||data.profile?.status==='approved',lockedPlan=item?.published_at!=null;
+const fees=[['deposit','Tiền cọc (đ)'],['electricity','Điện (đ/kWh)'],['service','Dịch vụ (đ/tháng)'],['parking','Gửi xe (đ/xe/tháng)']];
+const waterUnit=d.water_unit??'';
+const hasPublicCopy=lockedPlan&&item?.display_state==='available'&&!item?.moderation_hidden&&(item?.expires_at??0)>Math.floor(Date.now()/1000)&&(item?.status==='published'||d.keep_public_copy===true);
+const selectedPlan=data.plans.find((plan:any)=>plan.id===item?.plan_id);
+const planName=data.current_plan?.name??selectedPlan?.name??'Gói đã sử dụng';
+const action=mode==='cms'?'/api/cms/listing-submissions'+(item?'/'+item.id:''):'/api/account/listings'+(item?'/'+item.id:'');
+const labels={draft:'Bản nháp',pending:'Chờ xét duyệt',published:'Đã xuất bản',rejected:'Cần bổ sung'};
+---
+<form method="post" action={action} data-listing-form data-mode={mode} data-editable={editable} data-id={item?.id??''} data-owner-id={item?.owner_id??''} data-version={item?.version??0} data-photos={JSON.stringify(d.photos??[])} data-request-key={crypto.randomUUID()} class="listing-editor">
+<fieldset class="listing-editor-fields" disabled={!editable}>
+<div class="listing-editor-main">
+  {!approved&&<p class="finance-notice warning">Bạn có thể soạn và lưu bản nháp. <a href="/tai-khoan/ho-so" class="text-link">Hoàn thiện hồ sơ người đăng</a> để tải ảnh và gửi tin xét duyệt.</p>}
+  {item&&<p class="finance-notice"><strong>{labels[item.status]}</strong>{lockedPlan&&mode==='cms'?' · Bản sửa cần được duyệt lại. Gói và thời hạn đã mua được giữ nguyên.':''}{hasPublicCopy&&mode==='cms'?' Bản đã duyệt tiếp tục hiển thị trong lúc chờ.':''}{lockedPlan&&mode==='seller'?' · Lưu chỉnh sửa từ tài khoản của bạn sẽ tạm ẩn tin để xét duyệt lại. Thời hạn đã mua được giữ nguyên.':''}</p>}
+  {item?.review_note&&<p class="finance-notice warning preserve"><strong>Góp ý từ quản trị viên</strong>{item.review_note}</p>}
+  <section class="profile-card">
+    <header><div><h2>Thông tin phòng</h2><p>Tiêu đề rõ ràng giúp người thuê tìm đúng chỗ ở.</p></div><Icon name="home" size={22}/></header>
+    {mode==='cms'&&<div class="field"><label for={item?undefined:'listing-owner'}>Người đăng</label>{item?<><p class="listing-contact">{data.owner?.name??item.owner_id}{data.owner?.phone&&<><br/>{data.owner.phone}</>}</p><input type="hidden" name="owner_id" value={item.owner_id}/><small>Tin và ảnh thuộc tài khoản này.</small></>:<><select id="listing-owner" name="owner_id" required><option value="">Chọn người đăng đã được duyệt</option>{data.owners.map((owner:any)=><option value={owner.id}>{owner.name}</option>)}</select><small>Tin và ảnh được gắn với tài khoản này. Phí hoặc lượt miễn phí chỉ tính khi tin được duyệt.</small></>}</div>}
+    <div class="field"><label for="listing-title">Tiêu đề tin</label><input id="listing-title" name="title" minlength="5" maxlength="150" required value={item?.title??''} placeholder="Ví dụ: Phòng có gác, cửa sổ gần ĐH Công Thương"/></div>
+    <div class="listing-fields">
+      <div class="field"><label for="room-type">Loại phòng</label><select id="room-type" name="room_type"><option value="room" selected={item?.room_type!=='studio'}>Phòng trọ</option><option value="studio" selected={item?.room_type==='studio'}>Căn hộ mini</option></select></div>
+      <div class="field"><label for="listing-location">Khu vực tại TP.HCM</label><select id="listing-location" name="location_id" required><option value="">Chọn khu vực</option>{item&&!data.locations.some((l:any)=>l.id===item.location_id)&&<option value={item.location_id} selected disabled>Khu vực cũ đã ngừng sử dụng</option>}{data.locations.map((l:any)=><option value={l.id} selected={item?.location_id===l.id}>{l.name}</option>)}</select></div>
+      <div class="field"><label for="listing-price">Giá thuê (đ/tháng)</label><input id="listing-price" name="price_vnd" type="number" inputmode="numeric" min="1" max="100000000" step="1" required value={item?.price_vnd} placeholder="3000000"/></div>
+      <div class="field"><label for="listing-size">Diện tích (m²)</label><input id="listing-size" name="area_m2" type="number" inputmode="decimal" min="1" max="1000" step="0.1" required value={item?.area_m2} placeholder="25"/></div>
+    </div>
+    <fieldset class="listing-privacy"><legend>Địa chỉ hiển thị trên tin</legend><label><input type="radio" name="address_visibility" value="approximate" checked={d.address_visibility!=='exact'}/> Chỉ hiện khu vực đã chọn</label><label><input type="radio" name="address_visibility" value="exact" checked={d.address_visibility==='exact'}/> Hiện địa chỉ đã nhập</label></fieldset>
+    <div class="field"><label for="listing-people">Số người ở tối đa</label><input id="listing-people" name="people" type="number" min="1" max="20" step="1" value={d.people??2} required/></div>
+  </section>
+  <ListingMapEditor point={d.map_point} street={d.street}/>
+  <section class="profile-card">
+    <header><div><h2>Ảnh phòng</h2><p>Thêm từ 3–8 ảnh thật, rõ nét. Ảnh đầu tiên là ảnh bìa.</p></div><Icon name="plus" size={22}/></header>
+    <label class="listing-upload" for="listing-photos"><Icon name="plus" size={24}/><strong>Chọn ảnh từ thiết bị</strong><span>Ảnh từ điện thoại hoặc máy tính · Tối đa 2 MB/ảnh</span><input id="listing-photos" type="file" accept="image/*,.heic,.heif" multiple disabled={!approved} aria-describedby="listing-photo-help"/></label>
+    <p id="listing-photo-help" class="help listing-upload-help">Ảnh sẽ được tự động thu gọn trước khi lưu.</p>
+    <p data-upload-status role="status" class="help"></p>
+    <div class="listing-photo-grid" data-listing-photos>{(d.photos??[]).map((id,index)=><figure class="listing-photo"><img src={'/api/listing-images/'+id} alt={'Ảnh phòng '+(index+1)} width="240" height="180"/><figcaption>{index===0?'Ảnh bìa':'Ảnh '+(index+1)}</figcaption></figure>)}</div>
+    <p class="alert" data-upload-error role="alert" hidden></p>
+  </section>
+  <section class="profile-card">
+    <header><div><h2>Tiện ích & chi phí</h2><p>Ghi đầy đủ để người thuê dễ cân nhắc ngân sách.</p></div><Icon name="wallet" size={22}/></header>
+    <fieldset class="listing-amenities"><legend>Tiện ích có sẵn</legend>{amenities.map(a=><label><input type="checkbox" name="amenity" value={a.id} checked={d.amenities?.includes(a.id)}/>{a.name}</label>)}</fieldset>
+    <div class="listing-fields">
+      <div class="field"><label for="fee-water">Giá nước (đơn giá)</label><input id="fee-water" name="water" type="number" inputmode="numeric" min="0" max="100000000" step="1" required value={d.water??0}/></div>
+      <div class="field"><label for="fee-water-unit">Đơn vị tính tiền nước</label><select id="fee-water-unit" name="water_unit" required><option value="" selected={!waterUnit}>Chọn đơn vị</option><option value="per_person" selected={waterUnit==='per_person'}>Theo người (đ/người/tháng)</option><option value="per_m3" selected={waterUnit==='per_m3'}>Theo khối (đ/m³)</option></select></div>
+      {fees.map(([name,label])=><div class="field"><label for={'fee-'+name}>{label}</label><input id={'fee-'+name} name={name} type="number" inputmode="numeric" min="0" max="100000000" step="1" required value={d[name as keyof ListingDetails] as number??0}/></div>)}
+    </div><p class="help">Nhập 0 nếu miễn phí hoặc đã bao gồm trong tiền thuê.</p>
+  </section>
+  <section class="profile-card"><header><div><h2>Mô tả chi tiết</h2><p>Giới thiệu không gian, giờ giấc, điều kiện thuê và các điểm gần phòng.</p></div><Icon name="list" size={22}/></header><div class="field"><label for="listing-description">Nội dung tin</label><textarea id="listing-description" name="description" rows="8" maxlength="4000" placeholder="Mô tả từ 30 ký tự để gửi xét duyệt…">{item?.description??''}</textarea><small>Không đưa mật khẩu, OTP hoặc nội dung yêu cầu chuyển cọc trước khi xem phòng.</small></div></section>
+</div>
+<aside class="listing-editor-aside">
+  <section class="profile-card"><h2>{lockedPlan?'Gói xuất bản ban đầu':'Gói đăng tin'}</h2>
+    {lockedPlan?<><a class="text-link" href={mode==='cms'?'/quan-tri/gia-han':'/tai-khoan/tin-dang/'+item?.id+'/gia-han'}>Xem các kỳ gia hạn</a><input type="hidden" name="plan_id" value={item?.plan_id??''}/><p class="listing-contact"><strong>{planName}</strong><br/>{d.quoted_duration??'—'} ngày · {money(d.quoted_price??0)}{d.quoted_priority?' · Ưu tiên hiển thị':''}</p><p class="help">Giữ thông tin lần xuất bản đầu. Duyệt bản sửa không trừ thêm phí hoặc lượt miễn phí.</p></>:<div class="field" style="margin-top:20px"><label for="listing-plan">Gói và thời gian hiển thị</label><select id="listing-plan" name="plan_id" required><option value="">Chọn gói đăng tin</option>{item?.plan_id&&!selectedPlan&&<option value={item.plan_id} selected disabled>Gói cũ đã ngừng sử dụng — chọn lại gói</option>}{data.plans.map((p:any)=><option value={p.id} selected={item?.plan_id===p.id}>{p.name} · {p.duration_days} ngày · {money(p.price_vnd)}{p.is_priority?' · Ưu tiên hiển thị':''}</option>)}</select></div>}
+    {mode==='seller'&&<><div class="listing-balance"><span>Lượt miễn phí còn lại<strong>{data.free_posts_remaining} tin</strong></span><span>Số dư đăng tin<strong>{money(data.balance_vnd)}</strong></span></div><a class="text-link" href="/tai-khoan/so-du">Quản lý số dư <Icon name="arrow" size={15}/></a></>}
+    <p class="help">Chỉ tính lượt hoặc trừ phí khi tin được duyệt xuất bản lần đầu. Lưu nháp và gửi duyệt không mất phí.</p>
+  </section>
+  {mode==='seller'&&<section class="profile-card"><h2>Liên hệ trên tin</h2><p class="listing-contact">{data.profile?.display_name??'Chưa có hồ sơ'}<br/>{data.profile?.phone??'Chưa có số điện thoại'}</p><a class="text-link" href="/tai-khoan/ho-so">Cập nhật hồ sơ <Icon name="arrow" size={15}/></a></section>}
+  {editable&&<div class="listing-save-panel"><p class="alert" role="alert" data-listing-error hidden></p><button class="button full" type="submit" name="intent" value="submit" disabled={!approved}>{mode==='cms'?'Gửi tin chờ duyệt':'Gửi tin xét duyệt'} <Icon name="arrow" size={16}/></button><button class="button secondary full" type="submit" name="intent" value="draft">Lưu bản nháp</button><p class="help" data-listing-save-state>Kiểm tra nội dung trước khi gửi.</p></div>}
+</aside>
+</fieldset>
+</form>
+<script>import '../scripts/listing-editor';</script>
+<style>.listing-editor-fields{display:contents}.listing-editor[data-mode=cms] .listing-editor-aside{top:20px}.listing-contact{overflow-wrap:anywhere}</style>

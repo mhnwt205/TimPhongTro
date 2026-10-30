@@ -1,0 +1,105 @@
+---
+import Base from '../../layouts/Base.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import Icon from '../../components/Icon.astro';
+import '../../styles/content-pages.css';
+import {can} from '@timphongtro/api';
+import {env} from 'cloudflare:workers';
+const previewRequested=Astro.url.searchParams.get('preview')==='1';
+const canPreview=previewRequested&&can(Astro.locals.user,'content.read');
+const page=await env.DB.prepare('SELECT slug,title,body,updated_at,is_active FROM content_pages WHERE slug=? AND deleted_at IS NULL AND (is_active=1 OR ?=1)').bind(Astro.params.slug??'',canPreview?1:0).first<{slug:string;title:string;body:string;updated_at:number;is_active:number}>();
+if(!page)return Astro.rewrite('/404');
+const isPreview=canPreview&&page.is_active===0;
+const pageDescriptions:Record<string,string>={
+  'quy-dinh-dang-tin':'Cách chuẩn bị tin đăng rõ ràng, trung thực và hữu ích cho người đang tìm phòng.',
+  'phi-dang-tin-va-gia-han':'Mức phí, thời gian hiển thị và cách gia hạn tin của bạn.',
+  'nap-rut-va-hoan-tien':'Hướng dẫn nạp, rút số dư và theo dõi các yêu cầu giao dịch.',
+  'chinh-sach-bao-mat':'Thông tin cá nhân được sử dụng ra sao và cách bạn quản lý thông tin của mình.',
+  'lien-he-va-khieu-nai':'Cách gửi phản ánh về tin đăng, tài khoản hoặc giao dịch.',
+};
+const pageIcons:Record<string,string>={
+  'quy-dinh-dang-tin':'list',
+  'phi-dang-tin-va-gia-han':'calendar',
+  'nap-rut-va-hoan-tien':'wallet',
+  'chinh-sach-bao-mat':'shield',
+  'lien-he-va-khieu-nai':'message',
+};
+const slugify=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'muc';
+const slug=page.slug;
+const description=pageDescriptions[slug]??'Thông tin hữu ích giúp bạn an tâm hơn khi tìm phòng và sử dụng Tìm Phòng Trọ.';
+const allPages=(await env.DB.prepare('SELECT slug,title FROM content_pages WHERE is_active=1 AND deleted_at IS NULL').all<{slug:string;title:string}>()).results??[];
+const pageOrder=['quy-dinh-dang-tin','phi-dang-tin-va-gia-han','nap-rut-va-hoan-tien','chinh-sach-bao-mat','lien-he-va-khieu-nai'];
+const visiblePages=[...allPages].sort((a,b)=>pageOrder.indexOf(a.slug)-pageOrder.indexOf(b.slug));
+const relatedPages=visiblePages.filter(item=>item.slug!==slug);
+const blocks=page.body.split(/\n\s*\n/).map(text=>text.trim()).filter(Boolean).map((raw,index)=>{
+  const text=raw.replace(/\s*\n+\s*/g,' ').trim();
+  const isHeading=text.length<=84&&!/[.!?…:]$/.test(text);
+  return {text,isHeading,id:isHeading?`muc-${index+1}-${slugify(text)}`:undefined};
+});
+const sections=blocks.filter(block=>block.isHeading);
+const words=page.body.trim().split(/\s+/).filter(Boolean).length;
+const readingMinutes=Math.max(1,Math.ceil(words/220));
+const updatedDate=new Intl.DateTimeFormat('vi-VN',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Ho_Chi_Minh'}).format(new Date(page.updated_at*1000));
+---
+<Base title={page.title+' — Tìm Phòng Trọ'} description={description} robots={isPreview||page.body.trim().length<300?'noindex, follow':'index, follow'} ogType="article">
+  <SiteHeader/>
+  <main id="main-content" class="container content-page">
+    {isPreview&&<div class="content-preview-notice"><Icon name="eye" size={17}/><span><strong>Bản xem thử</strong> · Chỉ người có quyền quản lý nội dung xem được trang này.</span><a href="/quan-tri/noi-dung">Quay lại danh sách</a></div>}
+    <nav class="content-breadcrumb" aria-label="Đường dẫn">
+      <a href={isPreview?'/quan-tri/noi-dung':'/'}>{isPreview?'Quản lý nội dung':'Trang chủ'}</a><Icon name="chevron" size={13}/>{!isPreview&&<><a href="/thong-tin">Thông tin & hỗ trợ</a><Icon name="chevron" size={13}/></>}<span aria-current="page">{page.title}</span>
+    </nav>
+
+    <header class="content-article-hero">
+      <div class="content-article-kicker"><span class="content-kicker-icon"><Icon name={pageIcons[slug]??'info'} size={15}/></span> HƯỚNG DẪN & CHÍNH SÁCH</div>
+      <h1>{page.title}</h1>
+      <p>{description}</p>
+      <div class="content-meta">
+        <span><Icon name="refresh" size={15}/> Cập nhật {updatedDate}</span>
+        <span class="content-meta-divider" aria-hidden="true"></span>
+        <span><Icon name="clock" size={15}/> {readingMinutes} phút đọc</span>
+      </div>
+      <div class="content-article-art" aria-hidden="true">
+        <svg viewBox="0 0 226 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22 88 88 32l66 56v67H22V88Z" fill="#F8FCFC" stroke="#B7D8DC" stroke-width="2"/>
+          <path d="m12 88 76-64 76 64" stroke="#F2B649" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="43" y="96" width="40" height="59" rx="5" fill="#E2F1F2"/>
+          <rect x="97" y="97" width="34" height="30" rx="4" fill="#D0E8EA"/>
+          <path d="M114 100v24m-14-12h28" stroke="#1A7180" stroke-width="3" stroke-linecap="round"/>
+          <rect x="143" y="20" width="61" height="82" rx="10" fill="#FFF9EC" stroke="#E9D9B6" stroke-width="2"/>
+          <path d="M157 43h32m-32 13h25m-25 13h30" stroke="#7F9699" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="181" cy="83" r="10" fill="#F2B649"/>
+          <path d="m176 83 4 4 7-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="37" cy="39" r="5" fill="#E9B34D"/><circle cx="190" cy="133" r="4" fill="#2F8791"/>
+        </svg>
+      </div>
+    </header>
+
+    <div class="content-reading-layout">
+      <aside class="content-sidebar">
+        <nav class="content-toc" aria-label="Mục lục trang">
+          <span class="content-sidebar-label">TRONG BÀI NÀY</span>
+          <div class="content-toc-links">
+            {sections.map((section,index)=><a href={'#'+section.id}><i>{String(index+1).padStart(2,'0')}</i><span>{section.text}</span></a>)}
+          </div>
+        </nav>
+        {relatedPages.length>0&&<nav class="content-related" aria-label="Các thông tin khác">
+          <span class="content-sidebar-label">CÓ THỂ BẠN CẦN</span>
+          {relatedPages.map(item=><a href={'/thong-tin/'+item.slug}><span class="content-related-icon"><Icon name={pageIcons[item.slug]??'info'} size={15}/></span><span>{item.title}</span><Icon name="chevron" size={13}/></a>)}
+        </nav>}
+        <a class="content-help-link" href="/tim-phong"><span class="content-help-icon"><Icon name="home" size={17}/></span><span><strong>Đang tìm phòng?</strong><small>Xem các phòng đang cho thuê</small></span><Icon name="arrow" size={15}/></a>
+      </aside>
+
+      <details class="content-mobile-toc"><summary><span><Icon name="list" size={16}/> Mục lục bài viết</span><span>{sections.length} mục <Icon name="down" size={14}/></span></summary><nav aria-label="Mục lục bài viết trên điện thoại">{sections.map((section,index)=><a href={'#'+section.id}><i>{String(index+1).padStart(2,'0')}</i>{section.text}</a>)}</nav></details>
+
+      <article class="content-article">
+        <div class="content-article-toolbar"><span><span class="content-live-dot"></span> {isPreview?'BẢN XEM THỬ':'THÔNG TIN CHÍNH THỨC'}</span><a href={isPreview?'/quan-tri/noi-dung':'/thong-tin'}><Icon name="arrow" size={14}/> {isPreview?'Danh sách nội dung':'Tất cả bài viết'}</a></div>
+        <div class="content-article-body">
+          {blocks.map(block=>block.isHeading?<h2 id={block.id}>{block.text}</h2>:<p>{block.text}</p>)}
+        </div>
+        <div class="content-article-foot"><Icon name="shield" size={18}/><span>Bạn có thể quay lại trang này bất cứ khi nào cần xem lại thông tin.</span></div>
+      </article>
+    </div>
+  </main>
+  <SiteFooter/>
+</Base>

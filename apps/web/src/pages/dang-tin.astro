@@ -1,0 +1,12 @@
+---
+import Base from '../layouts/Base.astro';
+import PageBanner from '../components/PageBanner.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import RoomImage from '../components/RoomImage.astro';
+import Icon from '../components/Icon.astro';
+import {env} from 'cloudflare:workers';
+import {getWebsiteSettings} from '@timphongtro/api';
+const copy=await getWebsiteSettings(env.DB);
+---
+<Base title={copy.guide_title+' — Tìm Phòng Trọ'} description={copy.guide_subtitle} robots="index, follow"><SiteHeader active="pricing"/><main id="main-content" class="container wide-page"><PageBanner title={copy.guide_title} description={copy.guide_subtitle}/><div class="guide-grid"><div><ol class="guide-steps"><li><h2>{copy.guide_step_1_title}</h2><p>{copy.guide_step_1_body}</p></li><li><h2>{copy.guide_step_2_title}</h2><p>{copy.guide_step_2_body}</p></li><li><h2>{copy.guide_step_3_title}</h2><p>{copy.guide_step_3_body}</p></li></ol><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:28px"><a class="button" href="/tai-khoan/tin-dang/moi">Soạn tin mới<Icon name="arrow" size={17}/></a><a class="button secondary" href="/dang-ky">Tạo tài khoản</a></div></div><figure class="guide-photo"><RoomImage photo={2} alt="Không gian căn hộ mini" eager/><figcaption>Ảnh rõ, giá và phí đầy đủ giúp người thuê dễ hình dung chỗ ở.</figcaption></figure></div><section class="pricing-note" style="margin-top:32px"><Icon name="shield" size={22}/><div><h2>{copy.guide_note_title}</h2><p>{copy.guide_note_body}</p></div></section></main><SiteFooter/></Base>

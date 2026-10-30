@@ -1,0 +1,31 @@
+{
+  "name": "timphongtro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "scripts": {
+    "dev": "node scripts/run-tool.mjs npm run dev --workspace=@timphongtro/web",
+    "build": "node scripts/run-tool.mjs npm run build --workspace=@timphongtro/web",
+    "typecheck": "node scripts/run-tool.mjs npm run typecheck --workspaces --if-present",
+    "db:local": "node scripts/run-tool.mjs npm run db:local --workspace=@timphongtro/web",
+    "test": "node scripts/run-tool.mjs node --test --test-concurrency=1 tests/*.test.mjs",
+    "cf:check": "node --use-env-proxy scripts/check-cloudflare.mjs",
+    "admin:local": "node scripts/run-tool.mjs node scripts/admin-local.mjs",
+    "build:production": "node scripts/run-tool.mjs node scripts/production.mjs build",
+    "db:production": "node scripts/run-tool.mjs node scripts/production.mjs migrate",
+    "deploy:check": "node scripts/run-tool.mjs node scripts/production.mjs dry-run",
+    "deploy": "node scripts/run-tool.mjs node scripts/production.mjs deploy",
+    "smoke:production": "node --use-env-proxy scripts/smoke-production.mjs",
+    "preview": "node scripts/run-tool.mjs node scripts/preview.mjs"
+  },
+  "devDependencies": {
+    "jsqr": "1.4.0"
+  }
+}

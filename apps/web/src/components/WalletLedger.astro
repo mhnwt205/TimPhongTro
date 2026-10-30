@@ -1,0 +1,9 @@
+---
+import type {WalletEntry} from '@timphongtro/api';
+import type {Page} from '../lib/finance';
+import {money,date} from '../lib/finance';
+interface Props { ledger:Page<WalletEntry>; pagePath:string }
+const {ledger,pagePath}=Astro.props;
+---
+{!ledger.items.length?<div class="finance-empty"><h3>Chưa có giao dịch</h3><p>Giao dịch nạp, rút và phí đăng tin sẽ được hiển thị tại đây.</p></div>:<table class="cms-table finance-table"><thead><tr><th>Nội dung</th><th>Số tiền</th><th>Số dư sau</th><th>Thời gian</th></tr></thead><tbody>{ledger.items.map(e=><tr><td data-label="Nội dung"><strong>{e.kind==='topup'?'Nạp chuyển khoản':e.kind==='withdrawal_hold'?'Giữ tiền yêu cầu rút':e.kind==='withdrawal_release'?'Hoàn khoản giữ rút tiền':e.kind==='listing_fee'?'Phí đăng tin':e.kind==='renewal_fee'?'Phí gia hạn tin':'Điều chỉnh số dư'}</strong><p class="preserve finance-ledger-note">{e.description}</p><small>Mã: {e.id}</small></td><td data-label="Số tiền" class:list={['finance-number',{'finance-positive':e.amount_vnd>0}]}>{e.amount_vnd>0?'+':''}{money(e.amount_vnd)}</td><td data-label="Số dư sau" class="finance-number">{money(e.balance_after_vnd)}</td><td data-label="Thời gian">{date(e.created_at)}</td></tr>)}</tbody></table>}
+<nav class="cms-pagination" aria-label="Phân trang sổ giao dịch"><span>{ledger.page>1&&<a href={pagePath+'?page='+(ledger.page-1)}>← Trang trước</a>}</span><span>{ledger.total} giao dịch</span>{ledger.page*ledger.page_size<ledger.total&&<a href={pagePath+'?page='+(ledger.page+1)}>Trang sau →</a>}</nav>

@@ -1,0 +1,26 @@
+---
+import {displayLabel,reviewedCopy,type Listing,can} from '@timphongtro/api';
+interface Props {item:Listing;cms?:boolean}
+const {item,cms=false}=Astro.props;
+const now=Math.floor(Date.now()/1000),canUpdate=!cms||can(Astro.locals.user,'listings.update'),canModerate=cms&&can(Astro.locals.user,'listings.review');
+const active=item.published_at!=null&&item.expires_at!=null&&item.expires_at>now;
+const needsConfirm=active&&item.display_state==='available'&&!item.moderation_hidden&&reviewedCopy(item)&&now-(item.availability_confirmed_at??item.published_at??now)>=7*86400;
+const actions=[];
+if(canUpdate&&!item.moderation_hidden&&item.published_at!=null){
+ if(item.display_state!=='hidden')actions.push({key:'hide',label:'Tạm ẩn tin'});
+ if(item.display_state!=='unavailable')actions.push({key:'unavailable',label:'Đánh dấu hết phòng'});
+ if(item.display_state!=='available'&&active&&reviewedCopy(item))actions.push({key:'reopen',label:'Mở lại tin'});
+ if(item.display_state==='available'&&active&&reviewedCopy(item))actions.push({key:'confirm',label:'Xác nhận còn phòng'});
+}
+if(canModerate&&item.published_at!=null)actions.push(item.moderation_hidden?{key:'unblock',label:'Mở gỡ tin CMS'}:{key:'block',label:'CMS tạm gỡ tin'});
+---
+{item.published_at!=null&&<section class="listing-state" data-listing-state data-endpoint={(cms?'/api/cms/listing-submissions/':'/api/account/listings/')+item.id+'/state'} data-version={item.version}>
+<p class="help"><strong>{displayLabel(item)}</strong>{item.availability_confirmed_at&&<> · Xác nhận còn phòng: {new Date(item.availability_confirmed_at*1000).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})}</>}</p>
+{needsConfirm&&<p class="finance-notice warning">Đã 7 ngày chưa xác nhận. Hãy cập nhật phòng còn trống để người thuê dễ liên hệ. Tin không bị tự ẩn vì lời nhắc này.</p>}
+<div class="listing-state-buttons">{actions.map(action=><button type="button" class="button secondary" data-state-action={action.key}>{action.label}</button>)}{!cms&&!Astro.url.pathname.endsWith('/gia-han')&&<a class="button secondary" href={'/tai-khoan/tin-dang/'+item.id+'/gia-han'}>Gia hạn & lịch sử</a>}</div>
+<dialog class="listing-state-dialog"><form method="dialog"><h2 data-state-title></h2><p data-state-description></p><div class="field" data-state-note-wrap hidden><label for={'state-note-'+item.id}>Lý do CMS gỡ tin</label><textarea id={'state-note-'+item.id} name="note" minlength="5" maxlength="1000" rows="3"/></div><p class="alert" data-state-error hidden role="alert"></p><div class="listing-state-buttons"><button class="button secondary" value="cancel" type="submit">Hủy</button><button class="button" type="button" data-state-confirm>Xác nhận</button></div></form></dialog>
+</section>}
+<script>import '../scripts/listing-state';</script>
+<style>
+.listing-state{border-top:1px solid var(--border);padding-top:14px;margin-top:14px;min-width:0}.listing-state-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.listing-state-buttons .button{font-size:12px;padding:9px 12px}.listing-state-dialog{width:min(460px,calc(100% - 32px));max-height:85dvh;overflow:auto;border:1px solid var(--border);border-radius:12px;padding:24px;color:var(--text);background:var(--surface)}.listing-state-dialog::backdrop{background:#18344770}.listing-state-dialog h2{font-size:20px;margin-bottom:14px}.listing-state-dialog p{font-size:14px;line-height:1.8}.listing-state-dialog .field{margin-top:16px}.listing-state-dialog .listing-state-buttons{justify-content:flex-end}@media(max-width:480px){.listing-state-buttons .button{flex:1 1 140px}}
+</style>

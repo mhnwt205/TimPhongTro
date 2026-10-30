@@ -1,0 +1,16 @@
+---
+import Base from '../layouts/Base.astro';
+import PageBanner from '../components/PageBanner.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import RoomCard from '../components/RoomCard.astro';
+import Icon from '../components/Icon.astro';
+import {catalog} from '../lib/catalog';
+const {rooms}=await catalog();
+---
+<Base title="Phòng đã lưu — Tìm Phòng Trọ" description="Xem lại những phòng bạn đã lưu trên trình duyệt này.">
+  <SiteHeader active="saved"/><main id="main-content" class="container" data-saved-page><PageBanner title="Phòng đã lưu"><span data-saved-total>0</span> phòng · Lưu trên trình duyệt này, không cần đăng nhập.</PageBanner>
+    <div class="room-grid">{rooms.map(room=><RoomCard room={room} hidden/>)}</div>
+    <div class="empty-state" data-saved-empty><Icon name="heart" size={32}/><h2>Giữ lại những phòng bạn thích</h2><p>Nhấn biểu tượng trái tim trên mỗi phòng để xem lại ở đây.</p><a href="/tim-phong" class="button">Khám phá phòng</a><noscript><p>Hãy kiểm tra cài đặt trình duyệt để xem phòng đã lưu.</p></noscript></div>
+  </main><SiteFooter/>
+</Base>

@@ -1,0 +1,48 @@
+---
+import CmsLayout from '../../layouts/CmsLayout.astro';
+
+import app, { can, type SellerProfile } from '@timphongtro/api';
+import { env } from 'cloudflare:workers';
+import '../../styles/account.css';
+type Seller = SellerProfile & { email: string; is_locked: number; user_version: number };
+const status = Astro.url.searchParams.get('status') ?? 'pending';
+const page = Astro.url.searchParams.get('page') ?? '1';
+const query = new URLSearchParams({ status, page });
+const response = await app.fetch(new Request(new URL('/api/admin/sellers?' + query, Astro.url), { headers: { cookie: Astro.request.headers.get('cookie') ?? '' } }), env);
+const data = response.ok ? await response.json() as { items: Seller[]; page: number; total: number; page_size: number } : null;
+if (!data) Astro.response.status = response.status;
+const error = Astro.url.searchParams.get('error');
+const labels = { pending: 'Chờ duyệt', approved: 'Đã duyệt', rejected: 'Cần bổ sung' };
+const filters = [['pending', 'Chờ duyệt'], ['approved', 'Đã duyệt'], ['rejected', 'Cần bổ sung'], ['locked', 'Đã khóa'], ['all', 'Tất cả']];
+const date = (timestamp: number) => new Date(timestamp * 1000).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+const pageUrl = (nextPage: number) => '/quan-tri/nguoi-dang?' + new URLSearchParams({ status, page: String(nextPage) });
+---
+<CmsLayout title="Duyệt người đăng" description="Xét duyệt hồ sơ chủ trọ và môi giới.">
+
+  <main id="main-content" class="account-main">
+    <section class="page-heading"><h1>Duyệt người đăng</h1><p>Xem thông tin liên hệ và cấp quyền đăng tin cho chủ trọ, môi giới.</p></section>
+    {error && <p class="alert" role="alert">{error}</p>}
+    <form class="filter" method="get"><label for="status">Trạng thái</label><select id="status" name="status">{filters.map(([value, label]) => <option value={value} selected={status === value}>{label}</option>)}</select><button class="button secondary" type="submit">Lọc hồ sơ</button></form>
+    {!data ? <p class="alert" role="alert">Không tải được danh sách. Kiểm tra bộ lọc hoặc thử lại sau.</p> : <>
+      <p class="help">{data.total} hồ sơ · Trang {data.page}</p>
+      {data.items.length === 0 ? <div class="empty"><h2>Không có hồ sơ trong danh sách này</h2><p class="muted">Hồ sơ mới sẽ xuất hiện sau khi người đăng gửi thông tin xét duyệt.</p></div> : <div class="seller-list">{data.items.map((seller) => <article class="panel seller-card">
+        <div class="seller-top"><h2>{seller.display_name}</h2><span class="status-label">{seller.is_locked ? 'Đã khóa tài khoản' : labels[seller.status]}</span></div>
+        <dl class="facts"><div><dt>Loại người đăng</dt><dd>{seller.seller_type === 'owner' ? 'Chủ trọ / cho thuê trực tiếp' : 'Môi giới / saler'}</dd></div><div><dt>Email đăng nhập</dt><dd>{seller.email}</dd></div><div><dt>Điện thoại</dt><dd>{seller.phone}</dd></div><div><dt>Số Zalo</dt><dd>{seller.zalo_phone}</dd></div><div><dt>Gửi hồ sơ lúc</dt><dd>{date(seller.submitted_at)}</dd></div></dl>
+        {seller.introduction && <p class="preserve muted">{seller.introduction}</p>}
+        {seller.review_note && <p class="preserve help">Ghi chú xét duyệt: {seller.review_note}</p>}
+        {seller.status === 'pending' && !seller.is_locked && can(Astro.locals.user,'sellers.review') && <form class="moderation" method="post" action={`/api/admin/sellers/${seller.user_id}/review`}>
+          <input type="hidden" name="version" value={seller.version} />
+          <div class="field"><label for={`note-${seller.user_id}`}>Ghi chú / lý do cần bổ sung</label><textarea id={`note-${seller.user_id}`} name="note" rows="3" maxlength="1000" placeholder="Nêu rõ nội dung người đăng cần bổ sung nếu từ chối." /><small>Khi từ chối, cần nhập lý do từ 5 ký tự.</small></div>
+          <div class="actions"><button class="button" name="decision" value="approved" type="submit">Duyệt quyền đăng</button><button class="button secondary" name="decision" value="rejected" type="submit">Yêu cầu bổ sung</button></div>
+        </form>}
+        {can(Astro.locals.user,'users.update') && <details class="moderation"><summary>{seller.is_locked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}</summary><form method="post" action={`/api/admin/sellers/${seller.user_id}/lock`} style="margin-top: 20px">
+          <input type="hidden" name="version" value={seller.user_version} /><input type="hidden" name="locked" value={seller.is_locked ? 'false' : 'true'} />
+          <div class="field"><label for={`lock-${seller.user_id}`}>Lý do {seller.is_locked ? 'mở khóa' : 'khóa'}</label><textarea id={`lock-${seller.user_id}`} name="note" required minlength="5" maxlength="1000" rows="2" /></div>
+          <p class="help">Thao tác sẽ kết thúc các phiên đăng nhập hiện tại của tài khoản. Không xóa hồ sơ và lịch sử xét duyệt.</p>
+          <button class={`button ${seller.is_locked ? 'secondary' : 'danger'}`} type="submit">{seller.is_locked ? 'Xác nhận mở khóa' : 'Xác nhận khóa tài khoản'}</button>
+        </form></details>}
+      </article>)}</div>}
+      <nav class="pagination" aria-label="Phân trang">{data.page > 1 ? <a href={pageUrl(data.page - 1)}>← Trang trước</a> : <span />}{data.page * data.page_size < data.total && <a href={pageUrl(data.page + 1)}>Trang sau →</a>}</nav>
+    </>}
+  </main>
+</CmsLayout>

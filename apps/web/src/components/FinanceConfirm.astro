@@ -1,0 +1,5 @@
+---
+import Icon from './Icon.astro';
+---
+<noscript><p class="finance-notice warning">Trình duyệt đang chặn thao tác thanh toán. Hãy kiểm tra cài đặt trình duyệt rồi tải lại trang.</p></noscript>
+<dialog id="finance-confirm" class="cms-dialog finance-confirm"><div class="cms-dialog-header"><h2>Xác nhận thông tin</h2><button class="icon-button" type="button" data-close-dialog aria-label="Đóng xác nhận"><Icon name="close"/></button></div><div class="finance-confirm-body"><p data-finance-confirm-text></p><p class="help" data-finance-confirm-note></p><div class="cms-form-actions"><button class="button secondary" type="button" data-close-dialog>Kiểm tra lại</button><button class="button" type="button" data-finance-confirm-submit>Xác nhận thực hiện</button></div></div></dialog>

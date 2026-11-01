@@ -84,6 +84,8 @@ test('support and policy pages contain customer-facing copy but remain hidden dr
  const rows=(await response.json()).items.filter(item=>String(item.id).startsWith('support-draft-'));
  assert.equal(rows.length,5);
  assert.ok(rows.every(row=>row.is_active===0&&row.body.trim().length>0));
+ assert.ok(rows.every(row=>!row.body.includes('Tìm Phòng Trọ')));
+ assert.match(rows.find(row=>row.slug==='quy-dinh-dang-tin').body,/Trọ Tốt TP\.HCM kết nối/);
  assert.ok(rows.every(row=>!/(?:\bCMS\b|\bD1\b|\bR2\b|\bWorker\b|migration)/i.test(row.body)));
  assert.match(rows.find(row=>row.slug==='quy-dinh-dang-tin').body,/Người đăng chịu trách nhiệm/);
  assert.match(rows.find(row=>row.slug==='phi-dang-tin-va-gia-han').body,/Tin nháp, tin đang chờ/);
@@ -188,6 +190,8 @@ test('website content is editable and changed free-post defaults affect only new
  assert.equal(existingQuota.free_posts_total,3);
  const response=await api('site-content');assert.equal(response.status,200);const settings=(await response.json()).settings;
  assert.match(settings.free_posts_body,/\{\{free_posts\}\}/);
+ assert.ok(settings.disclaimer_before_report.includes('Trọ Tốt TP.HCM'));
+ assert.ok(!settings.disclaimer_before_report.includes('Tìm Phòng Trọ'));
  const update=await api('site-content',{method:'PATCH',body:{...settings,free_posts_new_account:5}});assert.equal(update.status,200,await update.clone().text());
  const created=await register();const newQuota=await DB.prepare('SELECT free_posts_total FROM posting_promotions WHERE user_id=?').bind(created.id).first();
  assert.equal(newQuota.free_posts_total,5);assert.equal((await DB.prepare('SELECT free_posts_total FROM posting_promotions WHERE user_id=?').bind(existing.id).first()).free_posts_total,3);

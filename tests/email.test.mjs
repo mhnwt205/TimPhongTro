@@ -131,6 +131,7 @@ test('existing accounts are marked verified by the migration and email templates
   assert.ok((await DB.prepare('SELECT email_verified_at FROM users WHERE id=?').bind(id).first()).email_verified_at);
   assert.equal(escapeHtml('<script>&"\''), '&lt;script&gt;&amp;&quot;&#39;');
   const html = emailShell('<Tin xấu>', ['Nội dung & thử'], 'https://workers.dev/x?a="x"', 'Tiếp tục');
+  assert.match(html,/TRỌ TỐT TP\.HCM/);
   assert.ok(!html.includes('<h1><Tin xấu></h1>'));
   assert.match(html, /Nội dung &amp; thử/);
 });

@@ -27,7 +27,7 @@ const pageIcons:Record<string,string>={
 };
 const slugify=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'muc';
 const slug=page.slug;
-const description=pageDescriptions[slug]??'Thông tin hữu ích giúp bạn an tâm hơn khi tìm phòng và sử dụng Tìm Phòng Trọ.';
+const description=pageDescriptions[slug]??'Thông tin hữu ích giúp bạn an tâm hơn khi tìm phòng và sử dụng Trọ Tốt TP.HCM.';
 const allPages=(await env.DB.prepare('SELECT slug,title FROM content_pages WHERE is_active=1 AND deleted_at IS NULL').all<{slug:string;title:string}>()).results??[];
 const pageOrder=['quy-dinh-dang-tin','phi-dang-tin-va-gia-han','nap-rut-va-hoan-tien','chinh-sach-bao-mat','lien-he-va-khieu-nai'];
 const visiblePages=[...allPages].sort((a,b)=>pageOrder.indexOf(a.slug)-pageOrder.indexOf(b.slug));
@@ -42,7 +42,7 @@ const words=page.body.trim().split(/\s+/).filter(Boolean).length;
 const readingMinutes=Math.max(1,Math.ceil(words/220));
 const updatedDate=new Intl.DateTimeFormat('vi-VN',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Ho_Chi_Minh'}).format(new Date(page.updated_at*1000));
 ---
-<Base title={page.title+' — Tìm Phòng Trọ'} description={description} robots={isPreview||page.body.trim().length<300?'noindex, follow':'index, follow'} ogType="article">
+<Base title={page.title+' — Trọ Tốt TP.HCM'} description={description} robots={isPreview||page.body.trim().length<300?'noindex, follow':'index, follow'} ogType="article">
   <SiteHeader/>
   <main id="main-content" class="container content-page">
     {isPreview&&<div class="content-preview-notice"><Icon name="eye" size={17}/><span><strong>Bản xem thử</strong> · Chỉ người có quyền quản lý nội dung xem được trang này.</span><a href="/quan-tri/noi-dung">Quay lại danh sách</a></div>}

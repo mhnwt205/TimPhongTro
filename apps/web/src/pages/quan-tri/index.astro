@@ -19,7 +19,7 @@ const time=(stamp:number)=>new Date(stamp*1000).toLocaleString('vi-VN',{timeZone
 const financeShortcuts=financeSections.filter(s=>s.key==='topups'?can(user,'topups.read')||can(user,'payments.read'):can(user,s.key+'.read'));
 const links=[...cmsSections,...financeShortcuts,reportSection].filter(s=>can(user,s.key+'.read')||s.key==='topups'&&can(user,'payments.read'));
 ---
-<CmsLayout title="Tổng quan" description="Theo dõi hoạt động và công việc quản trị Tìm Phòng Trọ." notifications={data?.notifications}>
+<CmsLayout title="Tổng quan" description="Theo dõi hoạt động và công việc quản trị Trọ Tốt TP.HCM." notifications={data?.notifications}>
  <main id="main-content" class="cms-dashboard">
   <div class="dashboard-heading"><div><p class="dashboard-date">{date} <span>TP.HCM</span></p><h1>Quản trị website</h1><p>Theo dõi hoạt động và xử lý công việc trong ngày.</p></div><form method="get" class="dashboard-period"><label for="dashboard-days">Khoảng thời gian</label><div><Icon name="calendar" size={16}/><select id="dashboard-days" name="days"><option value="7" selected={days===7}>7 ngày gần nhất</option><option value="30" selected={days===30}>30 ngày gần nhất</option></select><input type="hidden" name="metric" value={metric}/><button class="icon-button" type="submit" aria-label="Cập nhật khoảng thời gian"><Icon name="refresh" size={17}/></button></div></form></div>
   {!data?<p class="alert" role="alert">Không tải được dữ liệu tổng quan. Hãy thử tải lại trang.</p>:<>

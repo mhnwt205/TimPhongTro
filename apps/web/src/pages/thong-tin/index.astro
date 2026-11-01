@@ -26,9 +26,9 @@ if(!pages.length)return Astro.rewrite('/404');
 const featured=pages.find(page=>page.slug==='quy-dinh-dang-tin')??pages[0];
 const remaining=pages.filter(page=>page.slug!==featured.slug);
 const contactPage=pages.find(page=>page.slug==='lien-he-va-khieu-nai');
-const description='Hướng dẫn và thông tin rõ ràng để bạn yên tâm tìm phòng, đăng tin và sử dụng Tìm Phòng Trọ.';
+const description='Hướng dẫn và thông tin rõ ràng để bạn yên tâm tìm phòng, đăng tin và sử dụng Trọ Tốt TP.HCM.';
 ---
-<Base title="Thông tin & hỗ trợ — Tìm Phòng Trọ" description={description} robots={pages.some(page=>page.body.trim().length>=300)?'index, follow':'noindex, follow'}>
+<Base title="Thông tin & hỗ trợ — Trọ Tốt TP.HCM" description={description} robots={pages.some(page=>page.body.trim().length>=300)?'index, follow':'noindex, follow'}>
   <SiteHeader/>
   <main id="main-content" class="container content-hub">
     <nav class="content-breadcrumb" aria-label="Đường dẫn"><a href="/">Trang chủ</a><Icon name="chevron" size={13}/><span aria-current="page">Thông tin & hỗ trợ</span></nav>

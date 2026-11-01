@@ -36,10 +36,10 @@ const pendingRenewals=notifications?.counts.renewals??0;
 const pendingListings=notifications?.counts.listings??0;
 const pendingTopups=notifications?.counts.topups??0;
 ---
-<Base title={title+' — Quản trị Tìm Phòng Trọ'} description={description}>
+<Base title={title+' — Quản trị Trọ Tốt TP.HCM'} description={description}>
 <div class="cms-app">
  <aside class="cms-sidebar" aria-label="Điều hướng quản trị">
-  <a class="cms-brand" href="/quan-tri"><BrandLogo size={44}/><span>Tìm Phòng Trọ<small>Không gian quản trị</small></span></a>
+  <a class="cms-brand" href="/quan-tri"><BrandLogo size={44}/><span>Trọ Tốt TP.HCM<small>Không gian quản trị</small></span></a>
   <nav data-cms-sidebar-scroll data-scroll-key={'tpt:cms-sidebar:'+user.id} aria-label="Các mục quản trị">{groups.map(group=><div class="cms-nav-group"><p>{group.label}</p>{group.links.map(l=><a href={l.href} aria-current={isCurrent(l.href)?'page':undefined}><Icon name={l.icon} size={18}/><span>{l.label}</span>{l.href==='/quan-tri/nguoi-dang'&&<b class="cms-nav-count" data-seller-queue-count hidden={!pending}>{pending>99?'99+':pending}</b>}{l.href==='/quan-tri/rut-tien'&&<b class="cms-nav-count" data-withdrawal-queue-count hidden={!pendingWithdrawals}>{pendingWithdrawals>99?'99+':pendingWithdrawals}</b>}{l.href==='/quan-tri/gia-han'&&<b class="cms-nav-count" data-renewal-queue-count hidden={!pendingRenewals}>{pendingRenewals>99?'99+':pendingRenewals}</b>}{l.href==='/quan-tri/tin-phong'&&<b class="cms-nav-count" data-listing-queue-count hidden={!pendingListings}>{pendingListings>99?'99+':pendingListings}</b>}{l.href==='/quan-tri/nap-tien'&&<b class="cms-nav-count" data-topup-queue-count hidden={!pendingTopups}>{pendingTopups>99?'99+':pendingTopups}</b>}</a>)}</div>)}</nav>
   <div class="cms-identity"><a class="cms-identity-account" href="/quan-tri/bao-mat"><span class="cms-avatar">{user.name.charAt(0).toUpperCase()}</span><span><strong>{user.name}</strong><small>{user.is_super_admin?'Quản trị cao nhất':'Nhân viên quản trị'}</small></span></a><a href="/" target="_blank" rel="noopener"><Icon name="external" size={15}/>Mở website tìm phòng</a></div>
  </aside>

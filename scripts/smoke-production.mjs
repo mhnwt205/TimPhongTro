@@ -46,7 +46,7 @@ try {
   assert.equal(www.headers.get('location'), 'https://trotothcm.id.vn/');
   const home = await request('/');
   assert.equal(home.response.status, 200, `Home HTTP ${home.response.status}`);
-  assert.ok(home.html.includes('Tìm Phòng Trọ'));
+  assert.ok(home.html.includes('Trọ Tốt TP.HCM'));
   assert.match(home.html, /<meta name="robots" content="index, follow"/);
   assert.match(home.html, new RegExp(`<link rel="canonical" href="${basePattern}/"`));
   assert.match(home.html, new RegExp(`property="og:image" content="${basePattern}/brand/share-card\\.png"`));

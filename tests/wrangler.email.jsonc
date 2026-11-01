@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "RESEND_API_KEY": "re_test_only",
-    "EMAIL_FROM": "Tìm Phòng Trọ <noreply@example.test>",
+    "EMAIL_FROM": "Trọ Tốt TP.HCM <noreply@example.test>",
     "EMAIL_VERIFICATION_REQUIRED": "true",
     "EMAIL_TEST_CAPTURE": "true"
   },

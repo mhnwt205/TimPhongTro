@@ -14,7 +14,7 @@ const type=Astro.url.searchParams.get('type') ?? '';
 const areaCount=(area:string)=>rooms.filter(room=>room.area===area).length;
 const featured=filterRooms(Astro.url.searchParams,rooms).slice(0,12);
 ---
-<Base title="Tìm Phòng Trọ tại TP.HCM — Phòng trọ và căn hộ mini" description="Khám phá phòng trọ và căn hộ mini tại TP.HCM theo ngân sách, khu vực và tiện ích bạn cần." robots="index, follow" imageWidth={1200} imageHeight={630}>
+<Base title="Trọ Tốt TP.HCM — Phòng trọ và căn hộ mini tại TP.HCM" description="Khám phá phòng trọ và căn hộ mini tại TP.HCM theo ngân sách, khu vực và tiện ích bạn cần." robots="index, follow" imageWidth={1200} imageHeight={630}>
   <SiteHeader active="browse"/>
   <main id="main-content" class="container">
     <section class="home-intro" aria-labelledby="home-title"><div class="home-intro-copy"><h1 id="home-title">{copy.home_title}</h1><p>{copy.home_subtitle}</p>
@@ -30,7 +30,7 @@ const featured=filterRooms(Astro.url.searchParams,rooms).slice(0,12);
   <script type="application/ld+json" nonce={Astro.locals.cspNonce} set:html={JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'Tìm Phòng Trọ',
+    name: 'Trọ Tốt TP.HCM',
     url: Astro.site?.href,
     inLanguage: 'vi-VN',
     potentialAction: {

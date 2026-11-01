@@ -18,7 +18,7 @@ async function issueEmailToken(c:ApiContext,userId:string,purpose:'verify_email'
 }
 export async function sendVerificationEmail(c:ApiContext,userId:string,email:string){
  const issued=await issueEmailToken(c,userId,'verify_email',86400),url=new URL('/xac-minh-email?token='+encodeURIComponent(issued.token),c.req.url).toString();
- c.executionCtx.waitUntil(sendResend(c.env,{to:email,subject:'Xác minh email Tìm Phòng Trọ',html:emailShell('Xác minh địa chỉ email',['Xác minh email trong 24 giờ để hoàn tất hồ sơ người đăng.'],url,'Xác minh email'),text:'Xác minh email trong 24 giờ: '+url,key:'verify:'+userId+':'+issued.hash}));
+ c.executionCtx.waitUntil(sendResend(c.env,{to:email,subject:'Xác minh email Trọ Tốt TP.HCM',html:emailShell('Xác minh địa chỉ email',['Xác minh email trong 24 giờ để hoàn tất hồ sơ người đăng.'],url,'Xác minh email'),text:'Xác minh email trong 24 giờ: '+url,key:'verify:'+userId+':'+issued.hash}));
 }
 
 router.post('/register', async (c) => {
@@ -96,7 +96,7 @@ router.post('/password-reset/request',async c=>{
   const row=await c.env.DB.prepare('SELECT id,email FROM users WHERE email=? AND is_locked=0 AND deleted_at IS NULL').bind(email).first<{id:string;email:string}>();
   if(row&&c.env.RESEND_API_KEY&&c.env.EMAIL_FROM){
    const issued=await issueEmailToken(c,row.id,'password_reset',3600),url=new URL('/dat-lai-mat-khau?token='+encodeURIComponent(issued.token),c.req.url).toString();
-   c.executionCtx.waitUntil(sendResend(c.env,{to:row.email,subject:'Đặt lại mật khẩu Tìm Phòng Trọ',html:emailShell('Đặt lại mật khẩu',['Bạn vừa yêu cầu đặt lại mật khẩu. Liên kết dùng một lần và hết hạn sau 60 phút.'],url,'Đặt mật khẩu mới'),text:'Đặt lại mật khẩu trong 60 phút: '+url,key:'reset:'+row.id+':'+issued.hash}));
+   c.executionCtx.waitUntil(sendResend(c.env,{to:row.email,subject:'Đặt lại mật khẩu Trọ Tốt TP.HCM',html:emailShell('Đặt lại mật khẩu',['Bạn vừa yêu cầu đặt lại mật khẩu. Liên kết dùng một lần và hết hạn sau 60 phút.'],url,'Đặt mật khẩu mới'),text:'Đặt lại mật khẩu trong 60 phút: '+url,key:'reset:'+row.id+':'+issued.hash}));
   }
  }
  return c.json({message:'Nếu tài khoản phù hợp, bạn sẽ nhận được email hướng dẫn đặt lại mật khẩu.'},202);
@@ -149,7 +149,7 @@ router.post('/password-reset/complete',async c=>{
  if(results[0].meta.changes!==1)return c.json({error:'Liên kết đặt lại không hợp lệ, đã dùng hoặc đã hết hạn.'},400);
  const user=await c.env.DB.prepare('SELECT id,email FROM users WHERE change_token=?').bind(stamp).first<{id:string;email:string}>();
  if(user){
-  c.executionCtx.waitUntil(sendResend(c.env,{to:user.email,subject:'Mật khẩu Tìm Phòng Trọ đã thay đổi',html:emailShell('Mật khẩu đã được cập nhật',['Mật khẩu tài khoản vừa được đặt lại. Tất cả phiên đăng nhập trước đó đã kết thúc.'],new URL('/dang-nhap',c.req.url).toString(),'Đăng nhập'),text:'Mật khẩu đã được thay đổi. Nếu không phải bạn, hãy liên hệ hỗ trợ.',key:'password-reset-success:'+hash}));
+  c.executionCtx.waitUntil(sendResend(c.env,{to:user.email,subject:'Mật khẩu Trọ Tốt TP.HCM đã thay đổi',html:emailShell('Mật khẩu đã được cập nhật',['Mật khẩu tài khoản vừa được đặt lại. Tất cả phiên đăng nhập trước đó đã kết thúc.'],new URL('/dang-nhap',c.req.url).toString(),'Đăng nhập'),text:'Mật khẩu đã được thay đổi. Nếu không phải bạn, hãy liên hệ hỗ trợ.',key:'password-reset-success:'+hash}));
  }
  return c.json({ok:true});
 });

@@ -8,7 +8,7 @@ import Icon from '../components/Icon.astro';
 import {catalog} from '../lib/catalog';
 const {rooms}=await catalog();
 ---
-<Base title="Phòng đã lưu — Tìm Phòng Trọ" description="Xem lại những phòng bạn đã lưu trên trình duyệt này.">
+<Base title="Phòng đã lưu — Trọ Tốt TP.HCM" description="Xem lại những phòng bạn đã lưu trên trình duyệt này.">
   <SiteHeader active="saved"/><main id="main-content" class="container" data-saved-page><PageBanner title="Phòng đã lưu"><span data-saved-total>0</span> phòng · Lưu trên trình duyệt này, không cần đăng nhập.</PageBanner>
     <div class="room-grid">{rooms.map(room=><RoomCard room={room} hidden/>)}</div>
     <div class="empty-state" data-saved-empty><Icon name="heart" size={32}/><h2>Giữ lại những phòng bạn thích</h2><p>Nhấn biểu tượng trái tim trên mỗi phòng để xem lại ở đây.</p><a href="/tim-phong" class="button">Khám phá phòng</a><noscript><p>Hãy kiểm tra cài đặt trình duyệt để xem phòng đã lưu.</p></noscript></div>

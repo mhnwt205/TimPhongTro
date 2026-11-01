@@ -153,10 +153,20 @@ const uniqueFields:Record<string,{table:string;field:string;label:string;collati
  locations:{table:'locations',field:'name',label:'Tên khu vực',collation:' COLLATE NOCASE'},
  content:{table:'content_pages',field:'slug',label:'Mã đường dẫn'},
 };
+// SQLite's built-in NOCASE only folds ASCII. Fold Vietnamese accents and
+// whitespace in application code so visually identical area names conflict.
+const locationNameKey=(value:string)=>value.normalize('NFKD').toLocaleLowerCase('vi').replace(/đ/g,'d').replace(/\p{M}/gu,'').trim().replace(/\s+/g,' ');
 const resourceConflict=async(c:ApiContext,key:string,value:string,id?:string)=>{
  const rule=uniqueFields[key];if(!rule)return null;
- const query=`SELECT deleted_at FROM ${rule.table} WHERE ${rule.field}=?${rule.collation??''}${id?' AND id<>?':''} LIMIT 1`;
- const existing=await c.env.DB.prepare(query).bind(...(id?[value,id]:[value])).first<{deleted_at:number|null}>();
+ let existing:{deleted_at:number|null}|null;
+ if(key==='locations'){
+  const query=`SELECT name,deleted_at FROM locations${id?' WHERE id<>?':''}`;
+  const rows=await c.env.DB.prepare(query).bind(...(id?[id]:[])).all<{name:string;deleted_at:number|null}>();
+  existing=rows.results.find(row=>locationNameKey(row.name)===locationNameKey(value))??null;
+ }else{
+  const query=`SELECT deleted_at FROM ${rule.table} WHERE ${rule.field}=?${rule.collation??''}${id?' AND id<>?':''} LIMIT 1`;
+  existing=await c.env.DB.prepare(query).bind(...(id?[value,id]:[value])).first<{deleted_at:number|null}>();
+ }
  if(!existing)return null;
  const where=existing.deleted_at===null?(key==='locations'?'đã tồn tại':'đã được sử dụng'):'đang nằm trong thùng rác';
  const action=existing.deleted_at===null?'Nhập tên khác hoặc mở bản ghi hiện có để sửa.':'Khôi phục bản ghi đó hoặc nhập tên khác.';
@@ -218,9 +228,9 @@ for(const [key,def] of Object.entries(resources)){
   if(uniqueField){const conflict=await resourceConflict(c,key,String(values[uniqueField.field]),id);if(conflict)return conflict;}
   if(key==='listings'&&id){const old=await c.env.DB.prepare('SELECT owner_id FROM listing_drafts WHERE id=?').bind(id).first<{owner_id:string}>();if(old&&old.owner_id!==values.owner_id)return fail(c,'Không thể đổi chủ sở hữu tin đã tạo.',400);}
   if(key==='roles'&&!await rolePermissions(c,data,id))return fail(c,'Không thể sửa vai trò của chính mình hoặc cấp quyền vượt quá quyền đang có.',403);
-  const entityId=id??uid(),stamp=uid();
-  const statement=id?c.env.DB.prepare(`UPDATE ${table} SET ${columns.map(f=>f+'=?').join(',')},${key==='listings'?"status='draft',review_note='',":''}version=version+1,change_token=?,updated_at=unixepoch() WHERE id=? AND version=? AND deleted_at IS NULL`).bind(...columns.map(f=>values[f]),stamp,id,Number(data.version)):
-   c.env.DB.prepare(`INSERT INTO ${table}(id,${columns.join(',')},change_token) VALUES(?,${columns.map(()=>'?').join(',')},?) ON CONFLICT DO NOTHING`).bind(entityId,...columns.map(f=>values[f]),stamp);
+  const entityId=id??uid(),stamp=uid(),storedColumns=key==='locations'?[...columns,'name_key']:[...columns],storedValues=key==='locations'?[...columns.map(f=>values[f]),locationNameKey(String(values.name))]:columns.map(f=>values[f]);
+  const statement=id?c.env.DB.prepare(`UPDATE ${table} SET ${storedColumns.map(f=>f+'=?').join(',')},${key==='listings'?"status='draft',review_note='',":''}version=version+1,change_token=?,updated_at=unixepoch() WHERE id=? AND version=? AND deleted_at IS NULL`).bind(...storedValues,stamp,id,Number(data.version)):
+   c.env.DB.prepare(`INSERT INTO ${table}(id,${storedColumns.join(',')},change_token) VALUES(?,${storedColumns.map(()=>'?').join(',')},?) ON CONFLICT DO NOTHING`).bind(entityId,...storedValues,stamp);
   const stmts=[statement];
   if(key==='roles'){
    stmts.push(c.env.DB.prepare('DELETE FROM cms_role_permissions WHERE role_id=? AND EXISTS(SELECT 1 FROM cms_roles WHERE id=? AND change_token=?)').bind(entityId,entityId,stamp));

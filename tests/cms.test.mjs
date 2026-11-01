@@ -95,12 +95,15 @@ test('plans, locations, pages and draft listings have real CRUD, CAS and reversi
  const cases=[['plans',{name:'Gói thử riêng',price_vnd:7000,duration_days:10,description:'Mô tả do quản trị viên nhập cho gói thử.',is_priority:0,is_active:1}],['locations',{name:'Khu vực thử riêng',description:'Khu vực test',is_active:1}],['content',{title:'Trang thử riêng',slug:'trang-thu-rieng',body:'Nội dung <script> giữ dạng văn bản',is_active:1}]];
  for(const [key,data] of cases){
   const created=await api(key,{method:'POST',body:data});assert.equal(created.status,201,await created.clone().text());const id=(await created.json()).id;
-  if(key==='locations'){const duplicate=await api(key,{method:'POST',body:{...data,name:data.name.toLowerCase()}});assert.equal(duplicate.status,409);assert.match((await duplicate.json()).error,/Tên khu vực này đã tồn tại/);}
+  if(key==='locations'){
+   assert.equal((await DB.prepare('SELECT name_key FROM locations WHERE id=?').bind(id).first()).name_key,'khu vuc thu rieng');
+   for(const name of [data.name.toLowerCase(),'KHU VỰC THỬ RIÊNG','Khu vuc thu rieng',' Khu   vực thử riêng ']){const duplicate=await api(key,{method:'POST',body:{...data,name}});assert.equal(duplicate.status,409,`Expected ${JSON.stringify(name)} to conflict`);assert.match((await duplicate.json()).error,/Tên khu vực này đã tồn tại/);}
+  }
   let item=await row(key,id);assert.ok(item);if(key==='plans'){assert.equal(item.description,data.description);const publicPlan=(await (await req('/api/plans')).json()).items.find(p=>p.id===id);assert.equal(publicPlan.description,data.description);}const updates=await Promise.all([1,2].map(()=>api(key+'/'+id,{method:'PATCH',body:{...data,version:item.version}})));assert.deepEqual(updates.map(x=>x.status).sort(),key==='listings'?[409,409]:[200,409]);
   const writes=await DB.prepare('SELECT count(*) AS n FROM admin_audit WHERE target_id=? AND action=?').bind(id,key+'.update').first();assert.equal(writes.n,key==='listings'?0:1);
   item=await row(key,id);assert.equal((await api(key+'/'+id,{method:'DELETE',body:{version:item.version,note:'Dọn bản ghi thử nghiệm.'}})).status,200);
   assert.ok((await row(key,id)).deleted_at);
-  if(key==='locations'){const trashed=await api(key,{method:'POST',body:data});assert.equal(trashed.status,409);assert.match((await trashed.json()).error,/thùng rác/);}
+  if(key==='locations'){const trashed=await api(key,{method:'POST',body:{...data,name:'KHU VUC THU RIENG'}});assert.equal(trashed.status,409);assert.match((await trashed.json()).error,/thùng rác/);}
   if(key==='plans')assert.ok(!(await (await req('/api/plans')).json()).items.some(p=>p.id===id));
   item=await row(key,id);assert.equal((await api(key+'/'+id+'/restore',{method:'POST',body:{version:item.version,note:'Khôi phục bản ghi thử.'}})).status,200);
   item=await row(key,id);assert.equal(item.deleted_at,null);if('is_active'in item)assert.equal(item.is_active,0);
@@ -125,6 +128,8 @@ test('duplicate CMS names and invalid fields explain what to change',async()=>{
  assert.equal(duplicatePage.status,409);assert.match((await duplicatePage.json()).error,/Mã đường dẫn này đã được sử dụng/);
  const invalidLocation=await api('locations',{method:'POST',body:{name:'X',description:'',is_active:1}});
  assert.equal(invalidLocation.status,400);assert.match((await invalidLocation.json()).error,/Tên khu vực cần từ 2–100 ký tự/);
+ const concurrentLocations=await Promise.all(['Khu vực đồng thời','Khu vuc dong thoi'].map(name=>api('locations',{method:'POST',body:{name,description:'Thử tạo cùng lúc',is_active:1}})));
+ assert.deepEqual(concurrentLocations.map(response=>response.status).sort(),[201,409]);
 });
 test('locking revokes sessions and permissions; password change verifies old secret and revokes all sessions',async()=>{
  const user=await register();const id=await role(['content.read']);await grant(user,[id]);
